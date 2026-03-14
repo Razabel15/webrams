@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events | RAMS Laboratory - ITS Surabaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --rams-red: #a30000;
+            --rams-dark: #161616;
+        }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; background-color: #f9fafb; }
+        .serif-logo { font-family: 'Playfair Display', serif; }
+        
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--rams-red); z-index: 2000;
+            width: 0%; transition: width 0.1s ease;
+        }
+
+        /* --- ANIMATIONS & TRANSITIONS --- */
+        .reveal { 
+            opacity: 0; 
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform, opacity;
+        }
+        .reveal:not(.slide-left):not(.slide-right) { transform: translateY(50px); }
+        .reveal.active:not(.slide-left):not(.slide-right) { transform: translateY(0); opacity: 1; }
+        .reveal.slide-left { transform: translateX(-100px); }
+        .reveal.slide-left.active { transform: translateX(0); opacity: 1; }
+        .reveal.slide-right { transform: translateX(100px); }
+        .reveal.slide-right.active { transform: translateX(0); opacity: 1; }
+
+        @keyframes slow-pan {
+            0% { transform: scale(1.1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(-1%, -2%); }
+            100% { transform: scale(1.1) translate(0, 0); }
+        }
+        .animate-pan { animation: slow-pan 25s ease-in-out infinite alternate; }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(163, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0); }
+        }
+        .hover-pulse:hover { animation: pulse-red 1.5s infinite; }
+
+        @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-item { animation: fade-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; opacity: 0; }
+
+        /* --- NAVIGATION --- */
+        .nav-item { display: flex; align-items: center; height: 100%; }
+        .nav-link {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
+            cursor: pointer; color: #1f2937; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 4px; padding: 0 4px;
+            text-align: left; line-height: 1.2; height: 100%;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--rams-red); }
+
+        /* Mega Menu */
+        .mega-menu-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #f8f9fa; border-top: 1px solid #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-item.has-mega:hover .mega-menu-container { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0; background: white;
+            min-width: 220px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6; padding: 1rem 0; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 1rem 1rem; z-index: 50;
+        }
+        .nav-item.relative:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-link { display: block; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; }
+        .dropdown-link:hover { background: #fafafa; color: var(--rams-red); padding-left: 1.75rem; }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); }
+
+        /* --- MOBILE DRAWER --- */
+        #mobile-drawer {
+            position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px;
+            height: 100vh; background: white; z-index: 1600;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+        #mobile-drawer.open { right: 0; }
+        #mobile-menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1500; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-dropdown-content {
+            max-height: 0; overflow: hidden; padding-left: 1rem; border-left: 2px solid #f3f4f6;
+            transition: max-height 0.4s ease, margin 0.3s ease; opacity: 0;
+        }
+        .mobile-dropdown-content.active { max-height: 500px; margin: 0.5rem 0 1rem; opacity: 1; }
+
+        /* --- PAGE SPECIFIC --- */
+        .section-header-small {
+            font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rams-red); margin-bottom: 1rem; display: block;
+        }
+        .tech-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #f3f4f6;
+        }
+        .tech-card:hover {
+            transform: translateY(-8px);
+            border-color: #e5e7eb;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+        }
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: var(--rams-red);
+            color: white;
+            border-color: var(--rams-red);
+        }
+    </style>
+</head>
+<body class="bg-white selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <div id="scroll-progress"></div>
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <!-- MOBILE DRAWER -->
+    <div id="mobile-drawer">
+        <div class="flex justify-between items-center mb-12">
+            <img src="Logo RAMS Laboratory.PNG" alt="RAMS Lab Logo" class="h-12 w-auto">
+            <button onclick="toggleMobileMenu()" class="p-2 -mr-2"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <nav class="flex flex-col space-y-4">
+            <a href="index.html" class="text-lg font-bold py-2 block text-[#a30000]">Home</a>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-about', this)">
+                    Capabilities <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-about" class="mobile-dropdown-content">
+                    <a href="Capabilities.html" class="block py-2 text-sm font-bold text-gray-500 hover:text-[#a30000]">Capabilities Overview</a>
+                    <a href="Capabilities.html#core-capabilities" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Core Engineering</a>
+                    <a href="Capabilities.html#advanced-tech" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Advanced Tech</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-research', this)">
+                    Research Ecosystem <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-research" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Research Clusters</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Publication Repository</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Ongoing Projects</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-events', this)">
+                    Events <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-events" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Upcoming Symposia</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">MASTIC 2026</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Past Seminars</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Workshops</a>
+                </div>
+            </div>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000] text-gray-800">Contact</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-nav border-b border-gray-100 sticky top-0 z-[1000]">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-10 h-24 flex items-center justify-between relative">
+            <div class="flex items-center space-x-4 md:space-x-5 cursor-pointer z-50" onclick="window.location.href='index.html'">
+                <!-- Shield Logo -->
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Laboratory Logo" class="h-12 md:h-14 w-auto object-contain">
+                
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-800 uppercase tracking-tight">Laboratory of Reliability, Availability, Management & Safety</span>
+                    <span class="text-[8px] text-gray-500 uppercase font-medium">Department of Marine Engineering, ITS</span>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-6 h-full uppercase">
+                <div class="nav-item">
+                    <button onclick="window.location.href='index.html'" class="nav-link active">HOME</button>
+                </div>
+
+                <div class="nav-item has-mega h-full">
+                    <button class="nav-link" onclick="window.location.href='Capabilities.html'">CAPABILITIES <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="mega-menu-container">
+                        <div class="flex w-full">
+                            <div class="w-[35%] relative overflow-hidden group">
+                                <img src="./Asset/AIS Manuvering.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Lab" onerror="this.src='https://images.unsplash.com/photo-1581093458791-9f302247b595?q=80&w=2070&auto=format&fit=crop'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-6 left-6 text-white">
+                                    <span class="text-[9px] font-black uppercase tracking-widest bg-[#a30000] px-2 py-1 mb-2 inline-block">Featured</span>
+                                    <p class="font-bold text-sm">AISITS Manuvering <br>Simulator</p>
+                                </div>
+                            </div>
+                            <div class="w-[65%] p-10 bg-[#f8f9fa] flex flex-col justify-between">
+                                <div class="mb-8">
+                                    <h3 class="serif-logo text-2xl font-bold text-[#161616] mb-4 leading-tight max-w-lg">Team science led by top researchers using one-of-a-kind facilities.</h3>
+                                    <a href="Capabilities.html" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group transition-colors">
+                                        <span class="w-1.5 h-1.5 bg-[#a30000] mr-2 transition-transform group-hover:scale-150"></span>
+                                        Capabilities Overview
+                                    </a>
+                                </div>
+                                <div class="h-px bg-gray-200 w-full mb-8"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <span class="mega-header">Innovation</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./EWS Pipeline.html" class="mega-link">EWS pipeline</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Manuvering AISITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Smart Buoy </a></li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="mega-header">Research</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./Capabilities.html" class="mega-link">AISITS </a></li>
+                                            <li><a href="./PUI KEKAL.html" class="mega-link">PUI KEKAL ITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Inpex Dashboard</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="nav-link">RESEARCH <br>ECOSYSTEM <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Team.html" class="dropdown-link">Meet the Team</a>
+                        <a href="./Research.html" class="dropdown-link">Publications</a>
+                        <a href="./services.html" class="dropdown-link">services</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <button class="nav-link">EVENTS <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Events.html" class="dropdown-link">Media</a>
+                        <a href="https://elib.its.ac.id/conf/mastic/index.html" class="dropdown-link">MASTIC 2026</a>
+                        <a href="./Events.html" class="dropdown-link">events & insights</a>
+                        <a href="./student.html" class="dropdown-link">student work</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <a href="./Contact.html" class="nav-link">CONTACT</a>
+                </div>
+                <div class="h-8 w-px bg-gray-200 ml-2"></div>
+                <button onclick="window.location.href='#'" class="btn-hover bg-[#a30000] text-white px-5 py-3 text-[9px] font-black tracking-widest rounded-sm">Visit Lab</button>
+            </nav>
+            <button class="lg:hidden p-2" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+    </header>
+
+
+    <main>
+        <!-- 1. PAGE HEADER (HERO SECTION) -->
+        <section class="relative py-24 md:py-32 bg-[#161616] text-white overflow-hidden">
+            <div class="absolute inset-0 opacity-40">
+                <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=2000" alt="Audience at a conference" class="w-full h-full object-cover animate-pan">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#161616] via-[#161616]/80 to-transparent"></div>
+            </div>
+            
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
+                <div class="max-w-3xl reveal">
+                    <span class="text-[#a30000] font-black tracking-[0.2em] uppercase mb-4 block">Connect & Learn</span>
+                    <h1 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter mb-8">
+                        Events & Insights.
+                    </h1>
+                    <p class="text-lg text-gray-300 max-w-2xl mb-10 leading-relaxed">
+                        Engage with the RAMS Laboratory community through our global conferences, specialized workshops, open houses, and research symposiums shaping the future of engineering safety.
+                    </p>
+                </div>
+            </div>
+        </section>
+ <!-- 2. YOUTUBE VIDEO WRAPPER -->
+        <section class="py-24 bg-[#f9fafb] relative z-20">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8 reveal">
+                    <div>
+                        <span class="section-header-small">Latest Media</span>
+                        <h3 class="text-4xl font-black tracking-tighter text-[#161616]">Watch RAMS Lab in Action.</h3>
+                    </div>
+                    <div>
+                        <a href="https://www.youtube.com/@RamsLaboratory-yt5jo" target="_blank" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] transition-colors">
+                            View YouTube Channel <span class="material-symbols-outlined ml-2 text-[14px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="relative max-w-5xl mx-auto reveal">
+                    <!-- Decorative ambient blur behind the video -->
+                    <div class="absolute -inset-4 bg-gradient-to-r from-[#a30000]/40 to-[#161616]/40 opacity-50 blur-2xl -z-10 rounded-full"></div>
+                    
+                    <!-- Video Container -->
+                    <div class="rounded-3xl overflow-hidden shadow-2xl relative aspect-video border border-gray-200 bg-gray-900 z-10">
+                        <iframe 
+                            class="absolute inset-0 w-full h-full" 
+                            src="https://www.youtube.com/embed/XPZQYl3BHuM?autoplay=0&mute=1&rel=0" 
+                            title="RAMS Lab Highlights" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FEATURED EVENT -->
+        <section class="py-16 bg-white border-b border-gray-200">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden reveal flex flex-col lg:flex-row relative">
+                    <!-- Decorative element -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-red-50 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+                    
+                    <div class="lg:w-1/2 relative min-h-[300px] lg:min-h-full">
+                        <img src="./Asset/Mastic home.jpg" class="absolute inset-0 w-full h-full object-cover" alt="MASTIC 2026">
+                        <div class="absolute top-6 left-6 bg-[#a30000] text-white px-4 py-2 font-black text-xs uppercase tracking-widest shadow-lg">Featured Conference</div>
+                    </div>
+                    <div class="lg:w-1/2 p-10 md:p-16 flex flex-col justify-center bg-white/80 backdrop-blur-sm">
+                        <div class="flex items-center gap-4 text-sm font-bold text-gray-500 mb-6 uppercase tracking-wider">
+                            <span class="flex items-center gap-1.5 text-[#a30000]"><span class="material-symbols-outlined text-[18px]">event</span> Oct 20-22, 2026</span>
+                            <span>•</span>
+                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[18px]">location_on</span> Surabaya, ID</span>
+                        </div>
+                        <h3 class="text-3xl md:text-4xl font-black tracking-tighter text-[#161616] mb-6 leading-tight">MASTIC 2026: Int. Conference on Marine Safety & Technology</h3>
+                        <p class="text-gray-600 mb-8 leading-relaxed">Join global experts and industry leaders for the biennial MASTIC conference hosted by RAMS Lab. Explore cutting-edge methodologies in reliability, digital twin tech, and sustainable marine engineering.</p>
+                        <div class="flex gap-4">
+                            <button class="bg-[#161616] text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest hover:bg-[#a30000] transition-colors shadow-md">Register Now</button>
+                            <button class="border border-gray-300 text-gray-700 px-8 py-4 font-black text-[11px] uppercase tracking-widest hover:border-[#161616] transition-colors">Call for Papers</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. DYNAMIC EVENT DIRECTORY -->
+        <section class="py-24 bg-[#f9fafb] min-h-[800px]">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 reveal">
+                    <div>
+                        <span class="section-header-small">Directory</span>
+                        <h3 class="text-4xl font-black tracking-tighter text-[#161616]">All Events.</h3>
+                    </div>
+                    
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-2 md:gap-3" id="filter-container">
+                        <button class="filter-btn active border border-gray-300 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider" data-filter="all">All</button>
+                        <button class="filter-btn border border-gray-300 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 hover:border-gray-400" data-filter="upcoming">Upcoming</button>
+                        <button class="filter-btn border border-gray-300 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 hover:border-gray-400" data-filter="workshop">Workshops</button>
+                        <button class="filter-btn border border-gray-300 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 hover:border-gray-400" data-filter="seminar">Seminars</button>
+                        <button class="filter-btn border border-gray-300 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 hover:border-gray-400" data-filter="past">Past Events</button>
+                    </div>
+                </div>
+
+                <!-- Events Grid (Populated by JS) -->
+                <div id="events-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Cards injected here -->
+                </div>
+
+                <!-- Empty State (Hidden by default) -->
+                <div id="empty-state" class="hidden text-center py-20">
+                    <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">event_busy</span>
+                    <h4 class="text-xl font-bold text-gray-800 mb-2">No events found</h4>
+                    <p class="text-gray-500">There are currently no events matching this category.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 4. CTA -->
+        <section class="py-32 bg-[#161616] text-white text-center border-b-[8px] border-[#a30000]">
+            <div class="max-w-2xl mx-auto px-6 reveal">
+                <span class="material-symbols-outlined text-5xl text-[#a30000] mb-6">notifications_active</span>
+                <h3 class="text-4xl font-black tracking-tighter mb-6">Never miss an update.</h3>
+                <p class="text-gray-400 mb-10 text-lg">Subscribe to the RAMS Laboratory newsletter to receive the latest updates on research publications, upcoming seminars, and training schedules.</p>
+                <form class="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto" onsubmit="event.preventDefault(); alert('Subscribed successfully!');">
+                    <input type="email" placeholder="Enter your email address" required class="flex-1 bg-white/5 border border-white/20 px-6 py-4 text-white focus:outline-none focus:border-[#a30000] transition-colors rounded-sm">
+                    <button type="submit" class="bg-[#a30000] text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest hover:bg-white hover:text-black transition-all rounded-sm">Subscribe</button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#161616] text-white py-24">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="grid md:grid-cols-4 gap-16 mb-20">
+                <div class="col-span-2">
+                    <h2 class="serif-logo text-5xl font-black text-[#a30000] mb-8">RAMS</h2>
+                    <p class="text-gray-500 max-w-sm leading-relaxed">Laboratory of Reliability & Safety. Department of Marine Engineering, ITS Surabaya.</p>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Navigation</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li><a href="Capabilities.html" class="hover:text-white transition-colors">Capabilities</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">MASTIC 2026</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Publications</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Inquiries</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li>mastic@its.ac.id</li>
+                        <li>Surabaya, Indonesia</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="h-px bg-white/10 mb-12"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-700 uppercase font-black tracking-[0.5em]">
+                <p>&copy; 2026 RAMS Laboratory ITS Surabaya. Safety First.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- DYNAMIC EVENT DATA & LOGIC -->
+    <script>
+        // 1. Dummy Data Array
+        const eventsData = [
+            {
+                id: 1,
+                title: "Workshop: Risk-Based Inspection (RBI) for Offshore Assets",
+                date: "Nov 12, 2026",
+                location: "RAMS Lab, ITS",
+                category: "workshop",
+                status: "upcoming",
+                description: "Hands-on training session covering API 580/581 standards for establishing optimal inspection intervals using quantitative probability and consequence analysis.",
+                image: "https://images.unsplash.com/photo-1581092335397-9583eb92d232?auto=format&fit=crop&q=80&w=800"
+            },
+            {
+                id: 2,
+                title: "Guest Lecture: AI Applications in Maritime Safety",
+                date: "Dec 05, 2026",
+                location: "Virtual (Zoom)",
+                category: "seminar",
+                status: "upcoming",
+                description: "An open lecture discussing the implementation of machine learning models for anomaly detection and predictive maintenance in modern autonomous vessels.",
+                image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800"
+            },
+            {
+                id: 3,
+                title: "RAMS Lab Open House & Student Project Exhibition",
+                date: "Jan 15, 2027",
+                location: "Department of Marine Eng.",
+                category: "other",
+                status: "upcoming",
+                description: "Explore our state-of-the-art simulators and view final year projects from our top undergraduate and postgraduate researchers.",
+                image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800"
+            },
+            {
+                id: 4,
+                title: "Symposium on Human Reliability in Complex Systems",
+                date: "Aug 20, 2026",
+                location: "Surabaya Suites Hotel",
+                category: "seminar",
+                status: "past",
+                description: "A gathering of experts to discuss Human Reliability Analysis (HRA) integration into quantitative risk assessments for energy infrastructures.",
+                image: "https://images.unsplash.com/photo-1544928147-79a2dbc1f389?auto=format&fit=crop&q=80&w=800"
+            },
+            {
+                id: 5,
+                title: "Training: Intro to Fault Tree Analysis with Python",
+                date: "Jun 10, 2026",
+                location: "RAMS Lab, ITS",
+                category: "workshop",
+                status: "past",
+                description: "A two-day technical workshop on automating FTA and reliability block diagrams using open-source Python libraries.",
+                image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&q=80&w=800"
+            },
+            {
+                id: 6,
+                title: "Annual RAMS Industry & Alumni Meetup",
+                date: "May 05, 2026",
+                location: "ITS Rectorate Building",
+                category: "other",
+                status: "past",
+                description: "Networking event connecting current lab researchers with alumni working across the maritime, oil & gas, and renewable energy sectors.",
+                image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&q=80&w=800"
+            }
+        ];
+
+        const grid = document.getElementById('events-grid');
+        const emptyState = document.getElementById('empty-state');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        // 2. Render Function
+        function renderEvents(filterType = 'all') {
+            grid.innerHTML = ''; // Clear current grid
+            let filteredData = eventsData;
+
+            // Apply filters
+            if (filterType !== 'all') {
+                if (filterType === 'upcoming' || filterType === 'past') {
+                    filteredData = eventsData.filter(event => event.status === filterType);
+                } else {
+                    filteredData = eventsData.filter(event => event.category === filterType);
+                }
+            }
+
+            // Show/Hide Empty State
+            if (filteredData.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                grid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                
+                // Build HTML
+                filteredData.forEach((event, index) => {
+                    const delay = index * 0.1; // Staggered animation delay
+                    
+                    // Determine styling based on status
+                    const isPast = event.status === 'past';
+                    const badgeColor = isPast ? 'bg-gray-600' : 'bg-[#a30000]';
+                    const opacityClass = isPast ? 'opacity-80 grayscale-[20%]' : '';
+
+                    const cardHTML = `
+                        <div class="tech-card bg-white rounded-2xl overflow-hidden group animate-item ${opacityClass}" style="animation-delay: ${delay}s">
+                            <div class="relative h-56 overflow-hidden">
+                                <img src="${event.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="${event.title}">
+                                <div class="absolute top-4 left-4 ${badgeColor} text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm shadow-sm">
+                                    ${event.category}
+                                </div>
+                                ${isPast ? `<div class="absolute top-4 right-4 bg-white/90 text-gray-800 px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm backdrop-blur-sm">Concluded</div>` : ''}
+                            </div>
+                            <div class="p-8">
+                                <div class="flex flex-wrap gap-4 text-xs text-gray-500 mb-4 font-bold uppercase tracking-wider">
+                                    <span class="flex items-center gap-1.5 ${isPast ? '' : 'text-[#a30000]'}"><span class="material-symbols-outlined text-[16px]">calendar_today</span> ${event.date}</span>
+                                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">location_on</span> ${event.location}</span>
+                                </div>
+                                <h4 class="text-xl font-bold mb-3 text-[#161616] group-hover:text-[#a30000] transition-colors leading-snug h-[3.5rem] line-clamp-2">${event.title}</h4>
+                                <p class="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed">${event.description}</p>
+                                <a href="#" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group/link">
+                                    <span class="w-1.5 h-1.5 ${isPast ? 'bg-gray-400' : 'bg-[#a30000]'} mr-2 transition-transform group-hover/link:scale-150"></span>
+                                    ${isPast ? 'View Summary' : 'Read Details'}
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', cardHTML);
+                });
+            }
+        }
+
+        // 3. Setup Filter Listeners
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active button state
+                filterBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-[#a30000]', 'text-white', 'border-[#a30000]');
+                    b.classList.add('text-gray-600');
+                });
+                const clickedBtn = e.target;
+                clickedBtn.classList.remove('text-gray-600');
+                clickedBtn.classList.add('active', 'bg-[#a30000]', 'text-white', 'border-[#a30000]');
+
+                // Re-render based on data-filter attribute
+                const filterValue = clickedBtn.getAttribute('data-filter');
+                renderEvents(filterValue);
+            });
+        });
+
+        // Initial Render
+        document.addEventListener('DOMContentLoaded', () => {
+            renderEvents('all');
+        });
+
+
+        // --- UTILITY SCRIPTS (From Reference) ---
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                let windowHeight = window.innerHeight;
+                let elementTop = reveals[i].getBoundingClientRect().top;
+                let elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) { reveals[i].classList.add("active"); }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        reveal(); // Initial call
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const isOpening = !drawer.classList.contains('open');
+            if (isOpening) {
+                overlay.classList.add('active');
+                drawer.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleMobileDropdown(id, btn) {
+            const content = document.getElementById(id);
+            btn.classList.toggle('text-[#a30000]');
+            content.classList.toggle('active');
+        }
+
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            const progress = document.getElementById("scroll-progress");
+            if (progress) progress.style.width = scrolled + "%";
+        };
+    </script>
+</body>
+</html>

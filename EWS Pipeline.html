@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Early Warning System for Subsea Pipeline Safety | RAMS Laboratory ITS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --rams-red: #a30000;
+            --rams-dark: #161616;
+        }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .serif-logo { font-family: 'Playfair Display', serif; }
+        
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--rams-red); z-index: 2000;
+            width: 0%; transition: width 0.1s ease;
+        }
+
+        /* --- ANIMATIONS & TRANSITIONS --- */
+        
+        /* Base Reveal State */
+        .reveal { 
+            opacity: 0; 
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform, opacity;
+        }
+
+        /* 1. Fade Up (Default) */
+        .reveal:not(.slide-left):not(.slide-right) { transform: translateY(50px); }
+        .reveal.active:not(.slide-left):not(.slide-right) { transform: translateY(0); opacity: 1; }
+
+        /* 2. Slide In From Left */
+        .reveal.slide-left { transform: translateX(-100px); }
+        .reveal.slide-left.active { transform: translateX(0); opacity: 1; }
+
+        /* 3. Slide In From Right */
+        .reveal.slide-right { transform: translateX(100px); }
+        .reveal.slide-right.active { transform: translateX(0); opacity: 1; }
+
+        /* 4. Slow Pan Effect for Hero */
+        @keyframes slow-pan {
+            0% { transform: scale(1.1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(-1%, -2%); }
+            100% { transform: scale(1.1) translate(0, 0); }
+        }
+        .animate-pan { animation: slow-pan 25s ease-in-out infinite alternate; }
+
+        /* Pulse Animation */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(163, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0); }
+        }
+        .hover-pulse:hover { animation: pulse-red 1.5s infinite; }
+        
+        /* Critical Pulse Animation for Demo */
+        @keyframes pulse-critical {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+            70% { box-shadow: 0 0 0 25px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        .pulse-critical { animation: pulse-critical 2s infinite; }
+
+        /* New Animations */
+        @keyframes float-anim {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .float-icon { animation: float-anim 3s ease-in-out infinite; }
+        .delay-1 { animation-delay: 0.5s; }
+        .delay-2 { animation-delay: 1.0s; }
+
+        @keyframes radar-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .radar-sweep {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 250%; height: 250%;
+            background: conic-gradient(from 0deg at 50% 50%, rgba(163,0,0,0) 0%, rgba(163,0,0,0) 60%, rgba(163,0,0,0.1) 80%, rgba(163,0,0,0.6) 100%);
+            animation: radar-spin 4s linear infinite;
+            transform-origin: 0 0;
+            pointer-events: none;
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-item { display: flex; align-items: center; height: 100%; }
+        .nav-link {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
+            cursor: pointer; color: #1f2937; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 4px; padding: 0 4px;
+            text-align: left; line-height: 1.2; height: 100%;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--rams-red); }
+
+        /* Mega Menu */
+        .mega-menu-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #f8f9fa; border-top: 1px solid #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-item.has-mega:hover .mega-menu-container { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0; background: white;
+            min-width: 220px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6; padding: 1rem 0; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 1rem 1rem; z-index: 50;
+        }
+        .nav-item.relative:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-link { display: block; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; }
+        .dropdown-link:hover { background: #fafafa; color: var(--rams-red); padding-left: 1.75rem; }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); }
+
+        /* --- MOBILE DRAWER --- */
+        #mobile-drawer {
+            position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px;
+            height: 100vh; background: white; z-index: 1600;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+        #mobile-drawer.open { right: 0; }
+        #mobile-menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1500; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-dropdown-content {
+            max-height: 0; overflow: hidden; padding-left: 1rem; border-left: 2px solid #f3f4f6;
+            transition: max-height 0.4s ease, margin 0.3s ease; opacity: 0;
+        }
+        .mobile-dropdown-content.active { max-height: 500px; margin: 0.5rem 0 1rem; opacity: 1; }
+
+        /* --- PAGE SPECIFIC --- */
+        .list-bullet-square {
+            display: inline-block; width: 6px; height: 6px; 
+            border: 1px solid var(--rams-red); margin-right: 12px;
+            transform: translateY(-2px); transition: background 0.2s;
+        }
+        .capability-link:hover .list-bullet-square { background: var(--rams-red); }
+        .mega-link { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; padding: 4px 0; transition: color 0.2s; }
+        .mega-link:hover { color: var(--rams-red); }
+        .mega-header { font-size: 0.7rem; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; display: block; }
+        
+        .section-header-small {
+            font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rams-red); margin-bottom: 1rem; display: block;
+        }
+        .tech-card {
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+        .tech-card:hover {
+            transform: translateY(-10px);
+            border-color: #e5e7eb;
+            box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1);
+        }
+
+        /* Image Frame Styles */
+        .img-frame-left { border-radius: 0 3rem 0 3rem; overflow: hidden; box-shadow: 20px 20px 0px rgba(22, 22, 22, 0.05); }
+        .img-frame-right { border-radius: 3rem 0 3rem 0; overflow: hidden; box-shadow: -20px 20px 0px rgba(22, 22, 22, 0.05); }
+        .img-hover-zoom { transition: transform 0.7s ease; width: 100%; height: 100%; object-fit: cover; }
+        .img-frame-left:hover .img-hover-zoom, .img-frame-right:hover .img-hover-zoom { transform: scale(1.05); }
+        
+        /* Map Overlay */
+        .map-bg {
+            background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+        }
+
+    </style>
+</head>
+<body class="bg-white selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <div id="scroll-progress"></div>
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    
+    <!-- MOBILE DRAWER -->
+    <div id="mobile-drawer">
+        <div class="flex justify-between items-center mb-12">
+            <div class="flex items-center space-x-3">
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Logo" class="h-8 w-auto object-contain">
+                <h2 class="serif-logo text-2xl font-black text-[#a30000]">RAMS</h2>
+            </div>
+            <button onclick="toggleMobileMenu()" class="p-2 -mr-2"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <nav class="flex flex-col space-y-4">
+            <a href="index.html" class="text-lg font-bold py-2 block border-b border-transparent hover:text-[#a30000] transition-colors">Home</a>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 active text-[#a30000]" onclick="toggleMobileDropdown('m-about', this)">
+                    Innovations <span class="material-symbols-outlined arrow-icon">expand_more</span>
+                </button>
+                <div id="m-about" class="mobile-dropdown-content active">
+                    <a href="#" class="block py-2 text-sm text-[#a30000] font-bold">EWS Pipeline Overview</a>
+                    <a href="#core-technologies" onclick="toggleMobileMenu()" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Core Technologies</a>
+                    <a href="#advanced-capabilities" onclick="toggleMobileMenu()" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Advanced Capabilities</a>
+                </div>
+            </div>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000]">Research Ecosystem</a>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000]">Programmes</a>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000]">Events</a>
+        </nav>
+    </div>
+
+     <!-- HEADER -->
+    <header class="glass-nav border-b border-gray-100 sticky top-0 z-[1000]">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-10 h-24 flex items-center justify-between relative">
+            <div class="flex items-center space-x-4 md:space-x-5 cursor-pointer z-50" onclick="window.location.href='index.html'">
+                <!-- Shield Logo -->
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Laboratory Logo" class="h-12 md:h-14 w-auto object-contain">
+                
+            
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-800 uppercase tracking-tight">Laboratory of Reliability & Safety</span>
+                    <span class="text-[8px] text-gray-500 uppercase font-medium">Department of Marine Engineering, ITS</span>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-6 h-full uppercase">
+               
+
+                <div class="nav-item has-mega h-full">
+                    <button class="nav-link" onclick="window.location.href='Capabilities.html'">CAPABILITIES <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="mega-menu-container">
+                        <div class="flex w-full">
+                            <div class="w-[35%] relative overflow-hidden group">
+                                <img src="./Asset/AIS Manuvering.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Lab">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-6 left-6 text-white">
+                                    <span class="text-[9px] font-black uppercase tracking-widest bg-[#a30000] px-2 py-1 mb-2 inline-block">Featured</span>
+                                    <p class="font-bold text-sm">AISITS Manuvering <br>Simulator</p>
+                                </div>
+                            </div>
+                            <div class="w-[65%] p-10 bg-[#f8f9fa] flex flex-col justify-between">
+                                <div class="mb-8">
+                                    <h3 class="serif-logo text-2xl font-bold text-[#161616] mb-4 leading-tight max-w-lg">Team science led by top researchers using one-of-a-kind facilities.</h3>
+                                    <a href="Capabilities.html" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group">
+                                        <span class="w-1.5 h-1.5 bg-[#a30000] mr-2 transition-transform group-hover:scale-150"></span>
+                                        Capabilities Overview
+                                    </a>
+                                </div>
+                                <div class="h-px bg-gray-200 w-full mb-8"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <span class="mega-header">Innovation</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./EWS Pipeline.html" class="mega-link">EWS pipeline</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Manuvering AISITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Smart Buoy </a></li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="mega-header">Research</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./Capabilities.html" class="mega-link">AISITS </a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">PUI KEKAL ITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Inpex Dashboard</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="nav-link">RESEARCH <br>ECOSYSTEM <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Research.html" class="dropdown-link">Research</a>
+                        <a href="./Research.html" class="dropdown-link">Publikasi</a>
+                        <a href="./Research.html" class="dropdown-link">Paper</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <button class="nav-link">EVENTS <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Events.html" class="dropdown-link">Upcoming Symposia</a>
+                        <a href="./Events.html" class="dropdown-link">MASTIC 2026</a>
+                        <a href="./Events.html" class="dropdown-link">Past Seminars</a>
+                        <a href="./Events.html" class="dropdown-link">Workshops</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <a href="./Contact.html" class="nav-link">CONTACT</a>
+                    </div>
+                <div class="h-8 w-px bg-gray-200 ml-2"></div>
+                <button onclick="window.location.href='#'" class="bg-[#a30000] text-white px-5 py-3 text-[9px] font-black tracking-widest rounded-sm hover:bg-black transition-all shadow-lg hover-pulse">Visit Lab</button>
+            </nav>
+            <button class="lg:hidden p-2" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+    </header>
+
+    <main>
+        <!-- 1. HERO SECTION -->
+        <section class="relative py-24 md:py-32 bg-[#161616] text-white overflow-hidden">
+            <!-- Background Image with Slow Pan Animation -->
+            <div class="absolute inset-0 opacity-40">
+                <img src="https://images.unsplash.com/photo-1544377193-33dcf4d68fb5?auto=format&fit=crop&q=80&w=2000" alt="Maritime Traffic Control" class="w-full h-full object-cover animate-pan mix-blend-overlay">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#161616] via-transparent to-transparent"></div>
+            </div>
+            
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
+                <div class="max-w-4xl reveal">
+                    <span class="text-[#a30000] font-black tracking-[0.2em] uppercase mb-4 block flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Live System Showcase
+                    </span>
+                    <h1 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter mb-8">
+                        Early Warning System for Subsea Pipeline Safety.
+                    </h1>
+                    <h2 class="text-2xl md:text-3xl text-gray-300 font-light leading-snug mb-8">
+                        AISITS-Based Risk Monitoring & Collision Prevention in APBS Waters.
+                    </h2>
+                    <p class="text-lg text-gray-400 max-w-2xl mb-10 leading-relaxed">
+                        Sistem berbasis data AIS, trajectory prediction, Collision Risk Index (CRI), dan dynamic risk modeling untuk mendeteksi potensi ancaman terhadap subsea pipeline akibat aktivitas kapal di Alur Pelayaran Barat Surabaya.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#core-technologies" class="bg-[#a30000] text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest hover:bg-white hover:text-black transition-all">Explore the System</a>
+                        <a href="#collaboration" class="border border-white/30 text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest hover:bg-white hover:text-black transition-all">Request Collaboration</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. PROBLEM CONTEXT - APBS Risk Environment -->
+        <section class="py-24 bg-white border-b border-gray-100 overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="flex flex-col md:flex-row items-center gap-16">
+                    <!-- Image Slide Left -->
+                    <div class="md:w-1/2 reveal slide-left relative">
+                        <div class="img-frame-left h-[450px]">
+                            <img src="https://images.unsplash.com/photo-1569230516306-5a8cb5586399?auto=format&fit=crop&q=80&w=1000" alt="Ship Anchor Risk" class="img-hover-zoom">
+                        </div>
+                        <!-- Floating Stat Box -->
+                        <div class="absolute -bottom-8 -right-8 bg-[#161616] text-white p-6 rounded-xl shadow-2xl border border-gray-800">
+                            <span class="text-[#a30000] text-[10px] uppercase font-black tracking-widest mb-1 block">Critical Zone</span>
+                            <div class="text-3xl font-black font-mono">APBS</div>
+                            <div class="text-xs text-gray-400 mt-1">Alur Pelayaran Barat Surabaya</div>
+                        </div>
+                    </div>
+                    <!-- Text Slide Right -->
+                    <div class="md:w-1/2 reveal slide-right">
+                        <span class="section-header-small">Problem Context</span>
+                        <h3 class="text-4xl font-black tracking-tighter mb-6">Navigating the Dense Traffic of APBS.</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">The West Surabaya Navigation Channel (APBS) experiences extreme vessel density directly above critical subsea gas pipelines. Human error and uncontrolled anchoring pose catastrophic risks to this energy infrastructure.</p>
+                        <p class="text-sm text-gray-500 italic mb-8 border-l-2 border-[#a30000] pl-4">Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus.</p>
+                        
+                        <div class="grid sm:grid-cols-2 gap-8 mb-8">
+                            <div>
+                                <h4 class="font-bold mb-4 text-[#161616]">Identified Hazards</h4>
+                                <ul class="space-y-3 text-sm text-gray-700">
+                                    <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Uncontrolled Anchoring</li>
+                                    <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Anchor Dragging</li>
+                                    <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Vessel Grounding</li>
+                                    <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Collision near pipeline corridor</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Dummy Stats -->
+                        <div class="flex gap-8 border-t border-gray-100 pt-6">
+                            <div>
+                                <span class="block text-3xl font-black text-[#a30000] font-mono mb-1"><span class="counter-value" data-target="200">0</span>+</span>
+                                <span class="text-xs text-gray-500 font-bold uppercase tracking-wide">Daily Vessel Movements</span>
+                            </div>
+                            <div class="w-px bg-gray-200"></div>
+                            <div>
+                                <span class="block text-3xl font-black text-[#a30000] font-mono mb-1"><span class="counter-value" data-target="3">0</span>x</span>
+                                <span class="text-xs text-gray-500 font-bold uppercase tracking-wide">Higher Anchor Risk</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. SYSTEM ARCHITECTURE -->
+        <section class="py-20 bg-gray-50 border-b border-gray-200 overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+                    <span class="section-header-small text-center">Framework</span>
+                    <h3 class="text-3xl font-black tracking-tighter text-[#161616]">System Architecture & Data Flow.</h3>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-center text-center"><span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 float-icon">cell_tower</span><h4 class="font-bold text-sm">AIS Data Acquisition</h4><p class="text-xs text-gray-500 mt-2">Real-time maritime data</p></div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-center text-center" style="transition-delay: 100ms;"><span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 float-icon delay-1">route</span><h4 class="font-bold text-sm">Trajectory Prediction</h4><p class="text-xs text-gray-500 mt-2">Hybrid CNN–GRU models</p></div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-center text-center" style="transition-delay: 200ms;"><span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 float-icon delay-2">warning</span><h4 class="font-bold text-sm">Collision Risk Index</h4><p class="text-xs text-gray-500 mt-2">CRI computation</p></div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-center text-center" style="transition-delay: 300ms;"><span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 float-icon delay-1">architecture</span><h4 class="font-bold text-sm">Protection Zone Modeling</h4><p class="text-xs text-gray-500 mt-2">Spatial vulnerability</p></div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-center text-center" style="transition-delay: 400ms;"><span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 float-icon delay-2">notifications_active</span><h4 class="font-bold text-sm">Alert Classification</h4><p class="text-xs text-gray-500 mt-2">Safe to Critical staging</p></div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-center text-center" style="transition-delay: 500ms;"><span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 float-icon">dashboard</span><h4 class="font-bold text-sm">Monitoring Dashboard</h4><p class="text-xs text-gray-500 mt-2">Web-based UI/UX</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DETAILED CAPABILITIES: CORE TECHNOLOGIES -->
+        <div id="core-technologies">
+            <!-- Tech 1: AISITS (Image Left, Text Right) -->
+            <section class="py-24 bg-white border-b border-gray-100 overflow-hidden">
+                <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                    <div class="flex flex-col md:flex-row items-center gap-16">
+                        <div class="md:w-1/2 reveal slide-left">
+                            <div class="img-frame-left h-[400px]">
+                                <img src="https://images.unsplash.com/photo-1518175510-70f90e6e73c8?auto=format&fit=crop&q=80&w=1000" alt="Radar Display" class="img-hover-zoom">
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 reveal slide-right">
+                            <span class="section-header-small">Phase 1</span>
+                            <h3 class="text-4xl font-black tracking-tighter mb-6">AISITS Integration.</h3>
+                            <p class="text-gray-600 leading-relaxed mb-4">Seamless integration with the AISITS (Automatic Identification System ITS) platform to acquire high-frequency, reliable vessel kinetic and static data.</p>
+                            <p class="text-sm text-gray-500 italic mb-8">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper.</p>
+                            
+                            <div class="grid sm:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Data Handling</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Real-time maneuvering data</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>NMEA sentence parsing</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Data noise filtering</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Outputs</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Vessel SOG & COG</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Simulation–real data fusion</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Historical track logs</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tech 2: Hybrid CNN-GRU (Text Left, Image Right) -->
+            <section class="py-24 bg-gray-50 border-b border-gray-100 overflow-hidden">
+                <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                    <div class="flex flex-col md:flex-row-reverse items-center gap-16">
+                        <div class="md:w-1/2 reveal slide-right">
+                             <div class="img-frame-right h-[400px]">
+                                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000" alt="Neural Network Data" class="img-hover-zoom">
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 reveal slide-left">
+                            <span class="section-header-small">Phase 2</span>
+                            <h3 class="text-4xl font-black tracking-tighter mb-6">Hybrid CNN–GRU Prediction.</h3>
+                            <p class="text-gray-600 leading-relaxed mb-4">Leveraging Convolutional Neural Networks to extract spatial features and Gated Recurrent Units for temporal dependencies to predict future vessel trajectories.</p>
+                            <p class="text-sm text-gray-500 italic mb-8">Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi.</p>
+                            
+                            <div class="grid sm:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Machine Learning</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Temporal–spatial feature extraction</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Multi-step trajectory prediction</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Deep learning optimization</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Outputs</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Predicted Lat/Lon coordinates</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Risk forecasting boundaries</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>High-accuracy tracking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tech 3: Dynamic Risk Modeling (Image Left, Text Right) -->
+            <section class="py-24 bg-white border-b border-gray-100 overflow-hidden">
+                <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                    <div class="flex flex-col md:flex-row items-center gap-16">
+                        <div class="md:w-1/2 reveal slide-left">
+                            <div class="img-frame-left h-[400px]">
+                                <img src="https://images.unsplash.com/photo-1580828369019-2238b603eb15?auto=format&fit=crop&q=80&w=1000" alt="Subsea Modeling" class="img-hover-zoom">
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 reveal slide-right">
+                            <span class="section-header-small">Phase 3</span>
+                            <h3 class="text-4xl font-black tracking-tighter mb-6">Dynamic Risk Modeling.</h3>
+                            <p class="text-gray-600 leading-relaxed mb-4">Calculating the real-time probability of pipeline damage using physical ship dynamics, environmental factors, and spatial distances.</p>
+                            <p class="text-sm text-gray-500 italic mb-8">Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus.</p>
+                             <div class="grid sm:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Calculations</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>CRI (Collision Risk Index) computation</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Domain-based protection radius</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Anchor drop probability estimation</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Outputs</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Dynamic risk values</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Vulnerability mapping</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Impact severity metrics</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tech 4: Dashboard (Text Left, Image Right) -->
+            <section class="py-24 bg-gray-50 border-b border-gray-100 overflow-hidden">
+                <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                    <div class="flex flex-col md:flex-row-reverse items-center gap-16">
+                        <div class="md:w-1/2 reveal slide-right">
+                            <div class="img-frame-right h-[400px]">
+                                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=1000" alt="Control Room Dashboard" class="img-hover-zoom">
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 reveal slide-left">
+                            <span class="section-header-small">Phase 4</span>
+                            <h3 class="text-4xl font-black tracking-tighter mb-6">Decision Support Dashboard.</h3>
+                            <p class="text-gray-600 leading-relaxed mb-4">An intuitive, web-based interface for VTS operators to monitor traffic and receive immediate warnings regarding pipeline threats.</p>
+                            <p class="text-sm text-gray-500 italic mb-8">Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus. Nam nulla quam, gravida non, commodo a, sodales sit amet, nisi.</p>
+                             <div class="grid sm:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">UI/UX Features</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Real-time monitoring map</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Risk visualization overlays</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Alert prioritization queue</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold mb-4 text-[#a30000]">Actionability</h4>
+                                    <ul class="space-y-3 text-sm text-gray-700">
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Target vessel identification</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>VHF contact recommendations</li>
+                                        <li class="flex items-start"><span class="list-bullet-square mt-1.5"></span>Incident logging & export</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- RISK LEVEL DEMO SECTION -->
+        <section class="py-24 bg-white border-b border-gray-100">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+                    <span class="section-header-small text-center">Alert Staging</span>
+                    <h3 class="text-3xl font-black tracking-tighter mb-4">Risk Classification Protocol.</h3>
+                    <p class="text-gray-500 text-sm">Automated tiered warning system based on predicted Time to Closest Point of Approach (TCPA) and spatial infringement.</p>
+                </div>
+
+                <div class="grid md:grid-cols-4 gap-6">
+                    <!-- SAFE -->
+                    <div class="reveal bg-gray-50 p-6 rounded-lg border border-gray-200 border-l-4 border-l-green-600 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="font-black tracking-widest text-green-700 uppercase text-sm">Safe</span>
+                            <span class="material-symbols-outlined text-green-600">check_circle</span>
+                        </div>
+                        <p class="text-xs text-gray-600 font-medium">Vessel operating normally outside protection corridor.</p>
+                    </div>
+
+                    <!-- WARNING -->
+                    <div class="reveal bg-gray-50 p-6 rounded-lg border border-gray-200 border-l-4 border-l-yellow-400 shadow-sm relative overflow-hidden" style="transition-delay: 100ms;">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="font-black tracking-widest text-yellow-600 uppercase text-sm">Warning</span>
+                            <span class="material-symbols-outlined text-yellow-500">warning</span>
+                        </div>
+                        <p class="text-xs text-gray-600 font-medium">Trajectory indicates potential entry into outer buffer zone.</p>
+                    </div>
+
+                    <!-- DANGER -->
+                    <div class="reveal bg-gray-50 p-6 rounded-lg border border-gray-200 border-l-4 border-l-orange-500 shadow-sm relative overflow-hidden" style="transition-delay: 200ms;">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="font-black tracking-widest text-orange-600 uppercase text-sm">Danger</span>
+                            <span class="material-symbols-outlined text-orange-500">error</span>
+                        </div>
+                        <p class="text-xs text-gray-600 font-medium">Vessel breached outer zone. Abnormal speed/heading detected.</p>
+                    </div>
+
+                    <!-- CRITICAL -->
+                    <div class="reveal bg-red-50 p-6 rounded-lg border border-red-200 border-l-4 border-l-red-600 shadow-md relative overflow-hidden pulse-critical" style="transition-delay: 300ms;">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="font-black tracking-widest text-red-700 uppercase text-sm">Critical</span>
+                            <span class="material-symbols-outlined text-red-600 animate-bounce">crisis_alert</span>
+                        </div>
+                        <p class="text-xs text-red-800 font-medium">Imminent collision or anchoring directly above pipeline. Immediate action required.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERACTIVE MAP PLACEHOLDER -->
+        <section id="demo-map" class="py-12 bg-gray-50">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 reveal">
+                <div class="relative w-full h-[500px] bg-gray-900 rounded-3xl overflow-hidden flex items-center justify-center group shadow-2xl">
+                    <div class="absolute inset-0 opacity-40 mix-blend-overlay map-bg transition-transform duration-1000 group-hover:scale-105"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#161616] via-transparent to-[#161616]/50"></div>
+                    
+                    <!-- Radar Sweep Animation -->
+                    <div class="radar-sweep"></div>
+                    
+                    <!-- Decorative UI Elements -->
+                    <div class="absolute top-6 left-6 flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="absolute bottom-6 right-6 text-right">
+                        <span class="text-white/50 text-[10px] font-mono block">LAT: -7.0123 / LON: 112.7214</span>
+                        <span class="text-white/50 text-[10px] font-mono block">SYS_STATUS: ONLINE</span>
+                    </div>
+
+                    <div class="z-10 text-center px-4">
+                        <span class="material-symbols-outlined text-6xl text-white mb-6 drop-shadow-lg group-hover:text-[#a30000] transition-colors duration-500 float-icon">public</span>
+                        <h4 class="text-2xl md:text-4xl font-black text-white tracking-widest uppercase drop-shadow-lg mb-4">Interactive Risk Monitoring Map</h4>
+                        <p class="text-gray-400 font-mono text-sm tracking-widest bg-black/50 inline-block px-4 py-1 rounded-full border border-gray-700 mb-6">(Leaflet / WebGIS Integration Ready)</p>
+                        <p class="max-w-xl mx-auto text-xs text-gray-300 italic opacity-80">"Nulla porttitor accumsan tincidunt. Vivamus magna justo, lacinia eget consectetur sed, convallis at tellus. Pellentesque in ipsum id orci porta dapibus."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADVANCED CAPABILITIES -->
+        <div id="advanced-capabilities" class="bg-[#161616] text-white py-24">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12 reveal">
+                <span class="section-header-small text-[#a30000]">Under The Hood</span>
+                <h3 class="text-4xl md:text-5xl font-black tracking-tighter">Advanced Technologies.</h3>
+            </div>
+
+            <!-- Block 1 -->
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12 reveal">
+                <div class="tech-card bg-white/5 border border-white/10 p-10 rounded-2xl hover:bg-white/10 transition-colors">
+                    <div class="flex flex-col lg:flex-row gap-12">
+                        <div class="lg:w-1/3">
+                            <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">neurology</span>
+                            <h4 class="text-2xl font-bold mb-4">AI-Based Risk Classification</h4>
+                            <p class="text-gray-400 text-sm">Deep learning architectures to filter out normal behavior and precisely identify anomalous, high-risk vessel maneuvers.</p>
+                        </div>
+                        <div class="lg:w-2/3 grid sm:grid-cols-2 gap-8">
+                            <div>
+                                <h5 class="font-bold text-sm uppercase tracking-widest text-gray-500 mb-3">Capabilities</h5>
+                                <ul class="space-y-2 text-sm text-gray-300">
+                                    <li>• Pattern recognition for anchoring</li>
+                                    <li>• Real-time anomaly detection</li>
+                                    <li>• False alarm reduction algorithms</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Block 2 -->
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12 reveal">
+                <div class="tech-card bg-white/5 border border-white/10 p-10 rounded-2xl hover:bg-white/10 transition-colors">
+                    <div class="flex flex-col lg:flex-row gap-12">
+                        <div class="lg:w-1/3">
+                            <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">layers</span>
+                            <h4 class="text-2xl font-bold mb-4">Digital Twin of Pipeline Corridor</h4>
+                            <p class="text-gray-400 text-sm">Virtual replication of the seabed, pipeline route, and bathymetry integrated with live maritime traffic.</p>
+                        </div>
+                        <div class="lg:w-2/3 grid sm:grid-cols-2 gap-8">
+                            <div>
+                                <h5 class="font-bold text-sm uppercase tracking-widest text-gray-500 mb-3">Capabilities</h5>
+                                <ul class="space-y-2 text-sm text-gray-300">
+                                    <li>• 3D spatial vulnerability mapping</li>
+                                    <li>• Depth vs. Draft clearance modeling</li>
+                                    <li>• Scenario-based risk simulation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Block 3 -->
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 reveal">
+                <div class="tech-card bg-white/5 border border-white/10 p-10 rounded-2xl hover:bg-white/10 transition-colors">
+                    <div class="flex flex-col lg:flex-row gap-12">
+                        <div class="lg:w-1/3">
+                            <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">insights</span>
+                            <h4 class="text-2xl font-bold mb-4">Predictive Operational Advisory</h4>
+                            <p class="text-gray-400 text-sm">Not just warning, but suggesting actionable intelligence to prevent incidents before they happen.</p>
+                        </div>
+                        <div class="lg:w-2/3 grid sm:grid-cols-2 gap-8">
+                            <div>
+                                <h5 class="font-bold text-sm uppercase tracking-widest text-gray-500 mb-3">Outputs</h5>
+                                <ul class="space-y-2 text-sm text-gray-300">
+                                    <li>• Early VHF intervention prompts</li>
+                                    <li>• Automated alert dissemination</li>
+                                    <li>• Traffic rerouting advisories</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPLICATION DOMAINS -->
+        <section id="domain" class="py-24 bg-gray-50 border-t border-gray-200 overflow-hidden">
+             <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                 <div class="text-center mb-16 reveal">
+                     <span class="section-header-small text-center">Implementation</span>
+                     <h3 class="text-3xl font-black tracking-tighter">Application Domains.</h3>
+                 </div>
+                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all text-center"><span class="material-symbols-outlined text-3xl text-gray-400 mb-3">water_drop</span><h5 class="font-bold text-xs uppercase">Subsea Pipeline</h5></div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all text-center" style="transition-delay: 100ms;"><span class="material-symbols-outlined text-3xl text-gray-400 mb-3">oil_barrel</span><h5 class="font-bold text-xs uppercase">Offshore Energy</h5></div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all text-center" style="transition-delay: 200ms;"><span class="material-symbols-outlined text-3xl text-gray-400 mb-3">radar</span><h5 class="font-bold text-xs uppercase">VTS & Port Auth</h5></div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all text-center" style="transition-delay: 300ms;"><span class="material-symbols-outlined text-3xl text-gray-400 mb-3">monitoring</span><h5 class="font-bold text-xs uppercase">Traffic Monitoring</h5></div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all text-center" style="transition-delay: 400ms;"><span class="material-symbols-outlined text-3xl text-gray-400 mb-3">settings_input_antenna</span><h5 class="font-bold text-xs uppercase">Marine Infra.</h5></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- COLLABORATION -->
+        <section id="collaboration" class="py-24 bg-white">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="bg-[#161616] rounded-3xl p-12 md:p-20 text-white reveal">
+                    <div class="flex flex-col md:flex-row justify-between gap-16">
+                        <div class="md:w-1/3">
+                            <h3 class="text-3xl font-black mb-6">Collaboration & Services.</h3>
+                            <p class="text-gray-400 leading-relaxed">We provide custom deployment, integration, and continuous research for maritime infrastructure protection.</p>
+                        </div>
+                        <div class="md:w-2/3 grid grid-cols-2 gap-y-10 gap-x-8">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2 text-[#a30000]">Industry Partnership</h4>
+                                <p class="text-xs text-gray-400">Custom EWS deployment for Oil & Gas operators.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-2 text-[#a30000]">Port Authority Collab</h4>
+                                <p class="text-xs text-gray-400">System integration with existing VTS networks.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-2 text-[#a30000]">Simulation Consultancy</h4>
+                                <p class="text-xs text-gray-400">Pre-laying risk assessment and corridor evaluation.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-2 text-[#a30000]">Research Grants</h4>
+                                <p class="text-xs text-gray-400">Joint R&D for advanced AI maritime navigation safety.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINAL CTA -->
+        <section class="py-32 bg-gray-50 text-center border-t border-gray-200">
+            <div class="max-w-3xl mx-auto px-6 reveal">
+                <h3 class="text-4xl md:text-5xl font-black tracking-tighter mb-6 text-[#161616]">Protecting Critical Subsea Infrastructure Through Intelligent Monitoring.</h3>
+                <p class="text-gray-500 mb-10 text-lg">Ensure the safety of your offshore assets with the AISITS Early Warning System.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                   <a href="#" class="bg-[#a30000] text-white px-10 py-5 font-black text-[11px] uppercase tracking-widest rounded-full hover:bg-black transition-all shadow-lg hover:shadow-xl inline-block text-center"> Contact RAMS Laboratory</a>
+                    <a href="#" class="bg-white text-black border border-gray-200 px-10 py-5 font-black text-[11px] uppercase tracking-widest rounded-full hover:border-black transition-all inline-block">View Research Ecosystem</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#161616] text-white py-24 border-t border-white/5">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="grid md:grid-cols-4 gap-16 mb-20">
+                <div class="col-span-2">
+                    <div class="flex items-center space-x-4 mb-8">
+                        <img src="./image_0b2cfc.png" alt="RAMS Logo" class="h-16 w-auto object-contain drop-shadow-lg">
+                        <h2 class="serif-logo text-5xl font-black text-[#a30000]">RAMS</h2>
+                    </div>
+                    <p class="text-gray-500 max-w-sm leading-relaxed">Laboratory of Reliability & Safety. Department of Marine Engineering, ITS Surabaya.</p>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Navigation</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">About Lab</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">MASTIC 2026</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Publications</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Inquiries</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li>mastic@its.ac.id</li>
+                        <li>Surabaya, Indonesia</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="h-px bg-white/10 mb-12"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-700 uppercase font-black tracking-[0.5em]">
+                <p>&copy; 2026 RAMS Laboratory ITS Surabaya. Safety First.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                let windowHeight = window.innerHeight;
+                let elementTop = reveals[i].getBoundingClientRect().top;
+                let elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) { reveals[i].classList.add("active"); }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        // Trigger once on load
+        reveal();
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const isOpening = !drawer.classList.contains('open');
+            if (isOpening) {
+                overlay.classList.add('active');
+                drawer.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleMobileDropdown(id, btn) {
+            const content = document.getElementById(id);
+            btn.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            const progress = document.getElementById("scroll-progress");
+            if (progress) progress.style.width = scrolled + "%";
+        };
+
+        // Counter Animation Setup
+        const counters = document.querySelectorAll('.counter-value');
+        const speed = 50; 
+        
+        const startCounters = (entries, observer) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    const counter = entry.target;
+                    const updateCount = () => {
+                        const target = +counter.getAttribute('data-target');
+                        const count = +counter.innerText;
+                        const inc = target / speed;
+                        if(count < target) {
+                            counter.innerText = Math.ceil(count + inc);
+                            setTimeout(updateCount, 40);
+                        } else {
+                            counter.innerText = target;
+                        }
+                    };
+                    updateCount();
+                    observer.unobserve(counter);
+                }
+            });
+        };
+        
+        const counterObserver = new IntersectionObserver(startCounters, { threshold: 0.5 });
+        counters.forEach(counter => {
+            counterObserver.observe(counter);
+        });
+    </script>
+</body>
+</html>

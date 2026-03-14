@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUI-KEKAL | Maritime Safety & Marine Installation - ITS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --theme-color: #02689b;
+            --theme-dark: #111827;
+            --rams-red: #a30000;
+        }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .serif-logo { font-family: 'Playfair Display', serif; }
+        
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--theme-color); z-index: 2000;
+            width: 0%; transition: width 0.1s ease;
+        }
+
+        /* --- ANIMATIONS & TRANSITIONS --- */
+        .reveal { 
+            opacity: 0; 
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1); 
+            will-change: transform, opacity;
+        }
+        .reveal:not(.slide-left):not(.slide-right) { transform: translateY(50px); }
+        .reveal.active:not(.slide-left):not(.slide-right) { transform: translateY(0); opacity: 1; }
+        .reveal.slide-left { transform: translateX(-100px); }
+        .reveal.slide-left.active { transform: translateX(0); opacity: 1; }
+        .reveal.slide-right { transform: translateX(100px); }
+        .reveal.slide-right.active { transform: translateX(0); opacity: 1; }
+
+        /* Section Fading */
+        .section-fade {
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+        .section-fade.fade-in {
+            opacity: 1;
+        }
+
+        /* Button Interactive Effects */
+        .btn-interactive {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-interactive:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(2, 104, 155, 0.4);
+        }
+        .btn-interactive:active {
+            transform: scale(0.95);
+        }
+
+        /* Auto-Panning Effect for Images */
+        @keyframes image-pan {
+            0% { object-position: 0% 50%; }
+            50% { object-position: 100% 50%; }
+            100% { object-position: 0% 50%; }
+        }
+        .auto-pan-img {
+            animation: image-pan 30s ease-in-out infinite;
+            transform: scale(1.15); /* Slightly scaled to hide edges during pan */
+            transition: transform 0.7s ease;
+        }
+        .overflow-hidden:hover .auto-pan-img { 
+            transform: scale(1.2); 
+            animation-play-state: paused; /* Pause panning on hover to let the zoom effect shine */
+        }
+
+        @keyframes slow-pan {
+            0% { transform: scale(1.1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(-1%, -2%); }
+            100% { transform: scale(1.1) translate(0, 0); }
+        }
+        .animate-pan { animation: slow-pan 25s ease-in-out infinite alternate; }
+
+        @keyframes pulse-theme {
+            0% { box-shadow: 0 0 0 0 rgba(2, 104, 155, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(2, 104, 155, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(2, 104, 155, 0); }
+        }
+        .hover-pulse:hover { animation: pulse-theme 1.5s infinite; }
+
+        /* --- NAVIGATION --- */
+        .nav-item { display: flex; align-items: center; height: 100%; }
+        .nav-link {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
+            cursor: pointer; color: #1f2937; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 4px; padding: 0 4px;
+            text-align: left; line-height: 1.2; height: 100%;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--rams-red); }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); }
+
+        /* Mega Menu */
+        .mega-menu-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #f8f9fa; border-top: 1px solid #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-item.has-mega:hover .mega-menu-container { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0; background: white;
+            min-width: 220px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6; padding: 1rem 0; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 1rem 1rem; z-index: 50;
+        }
+        .nav-item.relative:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-link { display: block; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; }
+        .dropdown-link:hover { background: #fafafa; color: var(--rams-red); padding-left: 1.75rem; }
+
+        .mobile-dropdown-content {
+            max-height: 0; overflow: hidden; padding-left: 1rem; border-left: 2px solid #f3f4f6;
+            transition: max-height 0.4s ease, margin 0.3s ease; opacity: 0;
+        }
+        .mobile-dropdown-content.active { max-height: 500px; margin: 0.5rem 0 1rem; opacity: 1; }
+        .mega-link { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; padding: 4px 0; transition: color 0.2s; }
+        .mega-link:hover { color: var(--rams-red); }
+        .mega-header { font-size: 0.7rem; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; display: block; }
+
+        /* --- MOBILE DRAWER --- */
+        #mobile-drawer {
+            position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px;
+            height: 100vh; background: white; z-index: 1600;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+        #mobile-drawer.open { right: 0; }
+        #mobile-menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1500; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+
+        /* --- PAGE SPECIFIC --- */
+        .list-bullet-square {
+            display: inline-block; width: 6px; height: 6px; 
+            border: 1px solid var(--theme-color); margin-right: 12px;
+            transform: translateY(-2px); transition: background 0.2s;
+        }
+        
+        .section-header-small {
+            font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--theme-color); margin-bottom: 1rem; display: block;
+        }
+        .tech-card {
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+        .tech-card:hover {
+            transform: translateY(-10px);
+            border-color: #e5e7eb;
+            box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1);
+        }
+
+    </style>
+</head>
+<body class="bg-white selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <div id="scroll-progress"></div>
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <!-- MOBILE DRAWER -->
+    <div id="mobile-drawer">
+        <div class="flex justify-between items-center mb-12">
+            <img src="Logo RAMS Laboratory.PNG" alt="RAMS Lab Logo" class="h-12 w-auto">
+            <button onclick="toggleMobileMenu()" class="p-2 -mr-2"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <nav class="flex flex-col space-y-4">
+            <a href="index.html" class="text-lg font-bold py-2 block text-[#a30000]">Home</a>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-about', this)">
+                    Capabilities <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-about" class="mobile-dropdown-content">
+                    <a href="Capabilities.html" class="block py-2 text-sm font-bold text-gray-500 hover:text-[#a30000]">Capabilities Overview</a>
+                    <a href="Capabilities.html#core-capabilities" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Core Engineering</a>
+                    <a href="Capabilities.html#advanced-tech" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Advanced Tech</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-research', this)">
+                    Research Ecosystem <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-research" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Research Clusters</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Publication Repository</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Ongoing Projects</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-events', this)">
+                    Events <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-events" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Upcoming Symposia</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">MASTIC 2026</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Past Seminars</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Workshops</a>
+                </div>
+            </div>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000] text-gray-800">Contact</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-nav border-b border-gray-100 sticky top-0 z-[1000]">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-10 h-24 flex items-center justify-between relative">
+            <div class="flex items-center space-x-4 md:space-x-5 cursor-pointer z-50" onclick="window.location.href='index.html'">
+                <!-- Shield Logo -->
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Laboratory Logo" class="h-12 md:h-14 w-auto object-contain">
+                
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-800 uppercase tracking-tight">Laboratory of Reliability, Availability, Management & Safety</span>
+                    <span class="text-[8px] text-gray-500 uppercase font-medium">Department of Marine Engineering, ITS</span>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-6 h-full uppercase">
+                <div class="nav-item">
+                    <button onclick="window.location.href='index.html'" class="nav-link active">HOME</button>
+                </div>
+
+                <div class="nav-item has-mega h-full">
+                    <button class="nav-link" onclick="window.location.href='Capabilities.html'">CAPABILITIES <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="mega-menu-container">
+                        <div class="flex w-full">
+                            <div class="w-[35%] relative overflow-hidden group">
+                                <img src="./Asset/AIS Manuvering.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Lab" onerror="this.src='https://images.unsplash.com/photo-1581093458791-9f302247b595?q=80&w=2070&auto=format&fit=crop'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-6 left-6 text-white">
+                                    <span class="text-[9px] font-black uppercase tracking-widest bg-[#a30000] px-2 py-1 mb-2 inline-block">Featured</span>
+                                    <p class="font-bold text-sm">AISITS Manuvering <br>Simulator</p>
+                                </div>
+                            </div>
+                            <div class="w-[65%] p-10 bg-[#f8f9fa] flex flex-col justify-between">
+                                <div class="mb-8">
+                                    <h3 class="serif-logo text-2xl font-bold text-[#161616] mb-4 leading-tight max-w-lg">Team science led by top researchers using one-of-a-kind facilities.</h3>
+                                    <a href="Capabilities.html" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group transition-colors">
+                                        <span class="w-1.5 h-1.5 bg-[#a30000] mr-2 transition-transform group-hover:scale-150"></span>
+                                        Capabilities Overview
+                                    </a>
+                                </div>
+                                <div class="h-px bg-gray-200 w-full mb-8"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <span class="mega-header">Innovation</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./EWS Pipeline.html" class="mega-link">EWS pipeline</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Manuvering AISITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Smart Buoy </a></li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="mega-header">Research</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./Capabilities.html" class="mega-link">AISITS </a></li>
+                                            <li><a href="./PUI KEKAL.html" class="mega-link">PUI KEKAL ITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Inpex Dashboard</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="nav-link">RESEARCH <br>ECOSYSTEM <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Team.html" class="dropdown-link">Meet the Team</a>
+                        <a href="./Research.html" class="dropdown-link">Publications</a>
+                        <a href="./services.html" class="dropdown-link">services</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <button class="nav-link">EVENTS <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Events.html" class="dropdown-link">Media</a>
+                        <a href="https://elib.its.ac.id/conf/mastic/index.html" class="dropdown-link">MASTIC 2026</a>
+                        <a href="./Events.html" class="dropdown-link">events & insights</a>
+                        <a href="./student.html" class="dropdown-link">student work</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <a href="./Contact.html" class="nav-link">CONTACT</a>
+                </div>
+                <div class="h-8 w-px bg-gray-200 ml-2"></div>
+                <button onclick="window.location.href='#'" class="btn-hover bg-[#a30000] text-white px-5 py-3 text-[9px] font-black tracking-widest rounded-sm">Visit Lab</button>
+            </nav>
+            <button class="lg:hidden p-2" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+    </header>
+
+    <main>
+        <!-- 1. HERO SECTION -->
+        <section class="section-fade relative py-24 md:py-32 bg-[#111827] text-white overflow-hidden">
+            <!-- Background Image -->
+            <div class="absolute inset-0 opacity-40">
+                <img src="https://images.unsplash.com/photo-1554224213-395788e00125?auto=format&fit=crop&q=80&w=2000" alt="Maritime" class="w-full h-full object-cover animate-pan">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/80 to-transparent"></div>
+            
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
+                <div class="max-w-4xl reveal">
+                    <span class="text-[#02689b] font-black tracking-[0.2em] uppercase mb-4 block bg-white px-3 py-1 inline-block rounded-sm shadow-md">Center of Excellence</span>
+                    <h1 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter mb-8">
+                        PUI-KEKAL.
+                    </h1>
+                    <h2 class="text-2xl md:text-3xl text-gray-300 font-light leading-snug mb-8 max-w-2xl">
+                        Maritime Safety and Marine Installation.
+                    </h2>
+                    <p class="text-lg text-gray-400 max-w-2xl mb-10 leading-relaxed font-medium">
+                        A Center of Excellence at the university level owned by Sepuluh Nopember Institute of Technology (ITS) Surabaya, dedicated to advancing maritime safety and technology in Indonesia.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#timeline" class="btn-interactive bg-[#02689b] text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest shadow-lg hover:bg-white hover:text-[#02689b]">Explore Timeline</a>
+                        <a href="#activities" class="btn-interactive border border-white/30 text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest hover:bg-white hover:text-black hover:border-transparent shadow-lg">View Projects</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. BACKGROUND / RATIONALE -->
+        <section id="background" class="section-fade py-24 bg-gray-50 border-b border-gray-200 overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+                    <span class="section-header-small text-center">The Motivation</span>
+                    <h3 class="text-3xl md:text-4xl font-black tracking-tighter text-[#111827]">Background of Development.</h3>
+                    <p class="mt-4 text-gray-500">Why the establishment of PUI-KEKAL is crucial for Indonesia's maritime future.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-start border border-gray-100">
+                        <span class="material-symbols-outlined text-4xl text-[#02689b] mb-4">warning</span>
+                        <h4 class="font-bold text-lg mb-2">High Accident Rates</h4>
+                        <p class="text-sm text-gray-600">Addressing the concerningly high number of ship accidents occurring across Indonesian waters.</p>
+                    </div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-start border border-gray-100" style="transition-delay: 100ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#02689b] mb-4">gavel</span>
+                        <h4 class="font-bold text-lg mb-2">Strict Regulations</h4>
+                        <p class="text-sm text-gray-600">International regulations on maritime safety, crew welfare, and the marine environment have become increasingly strict.</p>
+                    </div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-start border border-gray-100" style="transition-delay: 200ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#02689b] mb-4">school</span>
+                        <h4 class="font-bold text-lg mb-2">ITS Excellence</h4>
+                        <p class="text-sm text-gray-600">Leveraging ITS's established position as a national center of excellence in the field of marine technology.</p>
+                    </div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-start border border-gray-100" style="transition-delay: 300ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#02689b] mb-4">workspace_premium</span>
+                        <h4 class="font-bold text-lg mb-2">Intellectual Output</h4>
+                        <p class="text-sm text-gray-600">ITS performance is heavily measured by the intellectual output and successful downstreaming of R&D results.</p>
+                    </div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-start border border-gray-100" style="transition-delay: 400ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#02689b] mb-4">biotech</span>
+                        <h4 class="font-bold text-lg mb-2">STP Development</h4>
+                        <p class="text-sm text-gray-600">ITS is actively developing a Science and Technology Park (STP), with the maritime sector positioned as a primary focus.</p>
+                    </div>
+                    <div class="reveal tech-card bg-white p-8 rounded-xl flex flex-col items-start border border-gray-100" style="transition-delay: 500ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#02689b] mb-4">public</span>
+                        <h4 class="font-bold text-lg mb-2">World Maritime Axis</h4>
+                        <p class="text-sm text-gray-600">Supporting the government's strategic program to make Indonesia a world maritime axis through safe ship operations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. TIMELINE -->
+        <section id="timeline" class="section-fade py-24 bg-white overflow-hidden relative">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="text-center max-w-3xl mx-auto mb-20 reveal">
+                    <span class="section-header-small text-center">Development History</span>
+                    <h3 class="text-3xl md:text-4xl font-black tracking-tighter text-[#111827]">Research Experience.</h3>
+                    <p class="mt-4 text-gray-500">The journey of Maritime Safety and Marine Installation research from TKT 1 to TKT 8.</p>
+                </div>
+
+                <div class="max-w-4xl mx-auto relative pt-10 pb-10" id="timeline-container">
+                    <!-- Vertical Line -->
+                    <div class="absolute left-6 md:left-1/2 top-0 bottom-0 w-1 bg-gray-100 -ml-0.5 rounded-full"></div>
+                    
+                    <!-- Scrolling Timeline Ball -->
+                    <div id="timeline-ball" class="absolute left-6 md:left-1/2 w-4 h-4 bg-[#02689b] ring-4 ring-[#02689b]/30 shadow-[0_0_20px_rgba(2,104,155,0.9)] rounded-full z-20 -ml-2 top-0 transition-all duration-100 ease-out"></div>
+
+                    <!-- 2007 -->
+                    <div class="relative flex md:justify-end md:pr-16 pl-16 md:pl-0 mb-16 w-full md:w-1/2 reveal slide-right">
+                        <div class="absolute left-6 md:left-auto md:right-0 w-5 h-5 rounded-full bg-[#02689b] top-1 -ml-2.5 md:-mr-2.5 border-4 border-white shadow-md z-10 timeline-dot"></div>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 shadow-sm w-full hover:shadow-md transition-shadow">
+                            <span class="text-[#02689b] font-bold text-xs uppercase tracking-widest block mb-2">2007 • TKT 1</span>
+                            <h4 class="text-2xl font-black text-gray-900">Start AIS Research</h4>
+                            <p class="text-sm text-gray-500 mt-2">Initiation of basic research and conceptualization in Automatic Identification Systems.</p>
+                        </div>
+                    </div>
+
+                    <!-- 2011-2012 -->
+                    <div class="relative flex md:justify-start md:pl-16 pl-16 mb-16 w-full md:w-1/2 md:ml-auto reveal slide-left">
+                        <div class="absolute left-6 md:left-0 w-5 h-5 rounded-full bg-gray-300 top-1 -ml-2.5 md:-ml-2.5 border-4 border-white shadow-md z-10 timeline-dot" data-orig="gray"></div>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 shadow-sm w-full hover:shadow-md transition-shadow">
+                            <span class="text-gray-500 font-bold text-xs uppercase tracking-widest block mb-2">2011 - 2012 • TKT 5</span>
+                            <h4 class="text-2xl font-black text-gray-900">Insentif Ristek</h4>
+                            <p class="text-sm text-gray-500 mt-2">Received research incentives to elevate the technology readiness level.</p>
+                        </div>
+                    </div>
+
+                    <!-- 2013-2014 -->
+                    <div class="relative flex md:justify-end md:pr-16 pl-16 md:pl-0 mb-16 w-full md:w-1/2 reveal slide-right">
+                        <div class="absolute left-6 md:left-auto md:right-0 w-5 h-5 rounded-full bg-gray-300 top-1 -ml-2.5 md:-mr-2.5 border-4 border-white shadow-md z-10 timeline-dot" data-orig="gray"></div>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 shadow-sm w-full hover:shadow-md transition-shadow">
+                            <span class="text-gray-500 font-bold text-xs uppercase tracking-widest block mb-2">2013 - 2014</span>
+                            <h4 class="text-2xl font-black text-gray-900">LBE</h4>
+                            <p class="text-sm text-gray-500 mt-2">Continued development through the Lab-Based Education (LBE) framework.</p>
+                        </div>
+                    </div>
+
+                    <!-- 2015-2016 -->
+                    <div class="relative flex md:justify-start md:pl-16 pl-16 mb-16 w-full md:w-1/2 md:ml-auto reveal slide-left">
+                        <div class="absolute left-6 md:left-0 w-5 h-5 rounded-full bg-gray-300 top-1 -ml-2.5 md:-ml-2.5 border-4 border-white shadow-md z-10 timeline-dot" data-orig="gray"></div>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 shadow-sm w-full hover:shadow-md transition-shadow">
+                            <span class="text-gray-500 font-bold text-xs uppercase tracking-widest block mb-2">2015 - 2016 • TKT 6</span>
+                            <h4 class="text-2xl font-black text-gray-900">PUPT</h4>
+                            <p class="text-sm text-gray-500 mt-2">Progressed under the Higher Education Applied Research (PUPT) scheme.</p>
+                        </div>
+                    </div>
+
+                    <!-- 2016 -->
+                    <div class="relative flex md:justify-end md:pr-16 pl-16 md:pl-0 mb-16 w-full md:w-1/2 reveal slide-right">
+                        <div class="absolute left-6 md:left-auto md:right-0 w-5 h-5 rounded-full bg-[#02689b] top-1 -ml-2.5 md:-mr-2.5 border-4 border-white shadow-md z-10 timeline-dot"></div>
+                        <div class="bg-[#f0f9ff] p-6 rounded-xl border border-[#bae6fd] shadow-sm w-full hover:shadow-md transition-shadow">
+                            <span class="text-[#02689b] font-bold text-xs uppercase tracking-widest block mb-2">2016 • TKT 7</span>
+                            <div class="flex items-center gap-4 mb-2">
+                                <h4 class="text-2xl font-black text-[#02689b]">CPPBT</h4>
+                                <span class="bg-[#02689b] text-white text-[10px] font-bold px-2 py-1 rounded">AISITS</span>
+                            </div>
+                            <p class="text-sm text-gray-600">Technology-Based Prospective Startup Candidate (CPPBT) phase, establishing the AISITS platform.</p>
+                        </div>
+                    </div>
+
+                    <!-- 2017 -->
+                    <div class="relative flex md:justify-start md:pl-16 pl-16 mb-16 w-full md:w-1/2 md:ml-auto reveal slide-left">
+                        <div class="absolute left-6 md:left-0 w-5 h-5 rounded-full bg-[#02689b] top-1 -ml-2.5 md:-ml-2.5 border-4 border-white shadow-md z-10 timeline-dot"></div>
+                        <div class="bg-[#f0f9ff] p-6 rounded-xl border border-[#bae6fd] shadow-sm w-full hover:shadow-md transition-shadow">
+                            <span class="text-[#02689b] font-bold text-xs uppercase tracking-widest block mb-2">2017 • TKT 8</span>
+                            <div class="flex items-center gap-4 mb-2">
+                                <h4 class="text-2xl font-black text-[#02689b]">PPTI</h4>
+                                <span class="bg-[#02689b] text-white text-[10px] font-bold px-2 py-1 rounded">Rintisan PUI</span>
+                            </div>
+                            <p class="text-sm text-gray-600">Funding for Industrial Technology Innovation (PPTI), marking the pilot phase for the Center of Excellence.</p>
+                        </div>
+                    </div>
+
+                    <!-- 2018 -->
+                    <div class="relative flex md:justify-end md:pr-16 pl-16 md:pl-0 w-full md:w-1/2 reveal slide-right">
+                        <div class="absolute left-6 md:left-auto md:right-0 w-6 h-6 rounded-full bg-green-500 top-1 -ml-3 md:-mr-3 border-4 border-white shadow-md z-10 timeline-dot"></div>
+                        <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-lg w-full transform hover:scale-105 transition-transform duration-300">
+                            <span class="text-green-400 font-bold text-xs uppercase tracking-widest block mb-2">2018 • TKT 8</span>
+                            <div class="flex items-center gap-4 mb-2">
+                                <h4 class="text-2xl font-black text-white">PPTI</h4>
+                                <span class="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded">PUI-PT</span>
+                            </div>
+                            <p class="text-sm text-gray-300">Official recognition and funding as a Higher Education Center of Excellence (PUI-PT).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. ACTIVITIES & PROJECTS -->
+        <section id="activities" class="section-fade bg-[#111827] text-white py-24">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-16 reveal">
+                <span class="section-header-small text-[#02689b]">Impact & Engagement</span>
+                <h3 class="text-4xl md:text-5xl font-black tracking-tighter mb-4">Highlighted Activities.</h3>
+                <p class="text-gray-400 max-w-2xl">Showcasing our continuous efforts in collaboration, implementation, and public outreach to elevate maritime safety standards.</p>
+            </div>
+
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Activity 1 -->
+                    <div class="reveal tech-card bg-white/5 border border-white/10 rounded-2xl overflow-hidden group">
+                        <div class="h-64 overflow-hidden relative">
+                            <img src="./Asset/Autonomuos vessel.jpg" alt="SKK Migas" class="auto-pan-img opacity-70 group-hover:opacity-100 w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#111827] to-transparent"></div>
+                            <div class="absolute bottom-4 left-6">
+                                <span class="bg-[#02689b] text-white text-[9px] font-black tracking-widest uppercase px-3 py-1 rounded-sm shadow-md">Implementation</span>
+                            </div>
+                        </div>
+                        <div class="p-8">
+                            <h4 class="text-xl font-bold mb-3 leading-snug">AISITS Implementation for Upstream Oil & Gas</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Socialization and implementation of the AISITS application as a vital safety support tool for upstream oil and gas operations. This strategic event was attended by officials from SKK MIGAS and KKKS.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Activity 2 -->
+                    <div class="reveal tech-card bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" style="transition-delay: 100ms;">
+                        <div class="h-64 overflow-hidden relative">
+                            <img src="./Asset/AIS Manuvering.jpg" alt="IHI Corp" class="auto-pan-img opacity-70 group-hover:opacity-100 w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#111827] to-transparent"></div>
+                            <div class="absolute bottom-4 left-6">
+                                <span class="bg-[#02689b] text-white text-[9px] font-black tracking-widest uppercase px-3 py-1 rounded-sm shadow-md">Global Partnership</span>
+                            </div>
+                        </div>
+                        <div class="p-8">
+                            <h4 class="text-xl font-bold mb-3 leading-snug">AISITS collaboration with Pelindo III in building AI Based MAnuvering plan</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Receiving a distinguished visit from IHI Corporation representatives. The meeting focused on exploring and establishing potential collaborative research and industrial partnerships with PUI-KEKAL.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Activity 3 -->
+                    <div class="reveal tech-card bg-white/5 border border-white/10 rounded-2xl overflow-hidden group">
+                        <div class="h-64 overflow-hidden relative">
+                            <img src="./Asset/Smart buoy.jpg" alt="UK Embassy" class="auto-pan-img opacity-70 group-hover:opacity-100 w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#111827] to-transparent"></div>
+                            <div class="absolute bottom-4 left-6">
+                                <span class="bg-[#02689b] text-white text-[9px] font-black tracking-widest uppercase px-3 py-1 rounded-sm shadow-md">Workshop</span>
+                            </div>
+                        </div>
+                        <div class="p-8">
+                            <h4 class="text-xl font-bold mb-3 leading-snug">Smart Buoy collaboration with Panasonic & Disnav surabaya</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Hosting a technical workshop alongside the UK Embassy to discuss the Prosperity Fund. The initiative aims to significantly develop and enhance Vocational Education within the Maritime Field.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Activity 4 -->
+                    <div class="reveal tech-card bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" style="transition-delay: 100ms;">
+                        <div class="h-64 overflow-hidden relative">
+                            <img src="./Asset/Ships 1.jpg" alt="Exhibition" class="auto-pan-img opacity-70 group-hover:opacity-100 w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#111827] to-transparent"></div>
+                            <div class="absolute bottom-4 left-6">
+                                <span class="bg-[#02689b] text-white text-[9px] font-black tracking-widest uppercase px-3 py-1 rounded-sm shadow-md">Exhibition</span>
+                            </div>
+                        </div>
+                        <div class="p-8">
+                            <h4 class="text-xl font-bold mb-3 leading-snug">Maritime Booth exibition in Grand city surabaya</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Proudly opening and operating a dedicated booth at the Hakteknas (National Technology Awakening Day) 2018 Exhibition in Pekanbaru, showcasing our innovations to the public and stakeholders.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. PARTNERS -->
+        <section id="partners" class="section-fade py-24 bg-gray-50 border-t border-gray-200 overflow-hidden">
+             <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                 <div class="text-center mb-16 reveal">
+                     <span class="section-header-small text-center">Global Network</span>
+                     <h3 class="text-3xl font-black tracking-tighter">Academic & Research Partners.</h3>
+                     <p class="mt-4 text-gray-500 max-w-2xl mx-auto">Working together with world-leading universities and institutes to drive innovation in maritime safety.</p>
+                 </div>
+                 
+                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24">
+                        <h5 class="font-bold text-sm text-center text-gray-800">ITS Surabaya</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 100ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">Kobe University</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 200ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">Osaka University</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 300ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">Tokyo University</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 400ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">UTM</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 500ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">NMRI</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 600ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">Istanbul Tech Univ.</h5>
+                    </div>
+                    <div class="reveal tech-card bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-center h-24" style="transition-delay: 700ms;">
+                        <h5 class="font-bold text-sm text-center text-gray-800">Dokuz Eylul University</h5>
+                    </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- 6. CTA -->
+        <section class="section-fade py-32 bg-white text-center border-t border-gray-100">
+            <div class="max-w-2xl mx-auto px-6 reveal">
+                <h3 class="text-4xl font-black tracking-tighter mb-6">Ready to collaborate?</h3>
+                <p class="text-gray-500 mb-10 text-lg">Join us in making Indonesia a world maritime axis through safe and innovative operations.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button class="btn-interactive bg-[#02689b] text-white px-10 py-5 font-black text-[11px] uppercase tracking-widest rounded-full shadow-lg">Contact PUI-KEKAL</button>
+                    <button class="btn-interactive bg-white text-black border border-gray-200 px-10 py-5 font-black text-[11px] uppercase tracking-widest rounded-full">Learn More</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#111827] text-white py-24 border-t border-white/5">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="grid md:grid-cols-4 gap-16 mb-20">
+                <div class="col-span-2">
+                    <h2 class="serif-logo text-5xl font-black text-[#02689b] mb-6">PUI-KEKAL</h2>
+                    <p class="text-gray-500 max-w-md leading-relaxed">
+                        Center of Excellence: Maritime Safety and Marine Installation.<br>
+                        Sepuluh Nopember Institute of Technology (ITS) Surabaya.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#02689b] mb-8">Navigation</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li><a href="#about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#timeline" class="hover:text-white transition-colors">History & Timeline</a></li>
+                        <li><a href="#activities" class="hover:text-white transition-colors">Projects & Events</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#02689b] mb-8">Contact</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li>ITS Campus, Sukolilo</li>
+                        <li>Surabaya, Indonesia</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="h-px bg-white/10 mb-12"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-600 uppercase font-black tracking-[0.5em]">
+                <p>&copy; 2026 PUI-KEKAL ITS SURABAYA.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            const windowHeight = window.innerHeight;
+            for (let i = 0; i < reveals.length; i++) {
+                let elementTop = reveals[i].getBoundingClientRect().top;
+                let elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) { reveals[i].classList.add("active"); }
+            }
+
+            // Handle Section Fades
+            const fades = document.querySelectorAll(".section-fade");
+            for (let i = 0; i < fades.length; i++) {
+                let elementTop = fades[i].getBoundingClientRect().top;
+                if (elementTop < windowHeight - 50) { fades[i].classList.add("fade-in"); }
+            }
+        }
+
+        function updateTimelineBall() {
+            const container = document.getElementById('timeline-container');
+            const ball = document.getElementById('timeline-ball');
+            if (!container || !ball) return;
+
+            const rect = container.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // Start moving ball when top of container hits center of screen
+            // Stop when bottom hits center of screen
+            const scrollPosition = windowHeight / 2;
+            let progress = (scrollPosition - rect.top) / rect.height;
+            progress = Math.max(0, Math.min(1, progress));
+            
+            ball.style.top = `${progress * 100}%`;
+
+            // Optional: Light up dots as ball passes
+            const dots = document.querySelectorAll('.timeline-dot');
+            dots.forEach(dot => {
+                const dotRect = dot.getBoundingClientRect();
+                if (scrollPosition >= dotRect.top + (dotRect.height / 2)) {
+                    // Turn dot blue
+                    dot.classList.remove('bg-gray-300');
+                    dot.classList.add('bg-[#02689b]');
+                } else if (dot.getAttribute('data-orig') === 'gray') {
+                    // Revert dot back to gray if scrolling back up
+                    dot.classList.add('bg-gray-300');
+                    dot.classList.remove('bg-[#02689b]');
+                }
+            });
+        }
+
+        window.addEventListener("scroll", () => {
+            reveal();
+            updateTimelineBall();
+        });
+        
+        // Trigger once on load
+        reveal();
+        updateTimelineBall();
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const isOpening = !drawer.classList.contains('open');
+            if (isOpening) {
+                overlay.classList.add('active');
+                drawer.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleMobileDropdown(id, btn) {
+            const content = document.getElementById(id);
+            btn.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            const progress = document.getElementById("scroll-progress");
+            if (progress) progress.style.width = scrolled + "%";
+            
+            // Re-trigger scroll event listeners
+            reveal();
+            updateTimelineBall();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Life & Projects | RAMS Laboratory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --rams-red: #a30000;
+            --rams-dark: #161616;
+        }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; background-color: #f9fafb; overflow-x: hidden; }
+        .serif-logo { font-family: 'Playfair Display', serif; }
+        
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--rams-red); z-index: 2000;
+            width: 0%; transition: width 0.1s ease;
+        }
+
+        /* --- ANIMATIONS & TRANSITIONS --- */
+        .reveal { 
+            opacity: 0; 
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform, opacity;
+        }
+        .reveal:not(.slide-left):not(.slide-right):not(.zoom-in) { transform: translateY(50px); }
+        .reveal.active:not(.slide-left):not(.slide-right):not(.zoom-in) { transform: translateY(0); opacity: 1; }
+        .reveal.slide-left { transform: translateX(-100px); }
+        .reveal.slide-left.active { transform: translateX(0); opacity: 1; }
+        .reveal.slide-right { transform: translateX(100px); }
+        .reveal.slide-right.active { transform: translateX(0); opacity: 1; }
+        .reveal.zoom-in { transform: scale(0.9); }
+        .reveal.zoom-in.active { transform: scale(1); opacity: 1; }
+
+        /* Slow Pan Effect */
+        @keyframes slow-pan {
+            0% { transform: scale(1.1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(-1%, -2%); }
+            100% { transform: scale(1.1) translate(0, 0); }
+        }
+        .animate-pan { animation: slow-pan 25s ease-in-out infinite alternate; }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(163, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0); }
+        }
+        .hover-pulse:hover { animation: pulse-red 1.5s infinite; }
+
+        /* Floating Element */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+
+        /* Button Toggle Animations */
+        @keyframes buttonPop {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- NAVIGATION STYLES --- */
+        .nav-item { display: flex; align-items: center; height: 100%; }
+        .nav-link {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
+            cursor: pointer; color: #1f2937; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 4px; padding: 0 4px;
+            text-align: left; line-height: 1.2; height: 100%;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--rams-red); }
+        .nav-link.active { border-bottom: 2px solid var(--rams-red); padding-bottom: 2rem; padding-top: 2rem; }
+
+        .mega-menu-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #f8f9fa; border-top: 1px solid #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-item.has-mega:hover .mega-menu-container { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0; background: white;
+            min-width: 220px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6; padding: 1rem 0; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 1rem 1rem; z-index: 50;
+        }
+        .nav-item.relative:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-link { display: block; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; }
+        .dropdown-link:hover { background: #fafafa; color: var(--rams-red); padding-left: 1.75rem; }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); }
+
+        #mobile-drawer {
+            position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px;
+            height: 100vh; background: white; z-index: 1600;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+        #mobile-drawer.open { right: 0; }
+        #mobile-menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1500; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-dropdown-content {
+            max-height: 0; overflow: hidden; padding-left: 1rem; border-left: 2px solid #f3f4f6;
+            transition: max-height 0.4s ease, margin 0.3s ease; opacity: 0;
+        }
+        .mobile-dropdown-content.active { max-height: 500px; margin: 0.5rem 0 1rem; opacity: 1; }
+        .mega-link { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; padding: 4px 0; transition: color 0.2s; }
+        .mega-link:hover { color: var(--rams-red); }
+        .mega-header { font-size: 0.7rem; font-weight: 800; color: var(--rams-red); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; display: block; }
+
+        /* --- CREATIVE INTERACTIVE CARDS --- */
+        .section-header-small {
+            font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rams-red); margin-bottom: 1rem; display: block;
+        }
+        
+        /* Modern Expanding Card */
+        .project-card {
+            position: relative;
+            height: 400px;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            background: #161616;
+            cursor: pointer;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-12px); /* Slight bounce up */
+            box-shadow: 0 25px 50px -12px rgba(163, 0, 0, 0.25);
+            border-color: rgba(163, 0, 0, 0.3);
+        }
+
+        .project-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+            opacity: 0.8;
+        }
+        
+        .project-card:hover .project-image {
+            transform: scale(1.1);
+            opacity: 0.4; /* Darkens image more on hover to make text pop */
+        }
+
+        .project-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(22, 22, 22, 0.95) 0%, rgba(22, 22, 22, 0.6) 50%, transparent 100%);
+            display: flex;
+            flex-col;
+            justify-content: flex-end;
+            padding: 2rem;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .project-card:hover .project-overlay {
+            background: linear-gradient(to top, rgba(22, 22, 22, 0.98) 0%, rgba(163, 0, 0, 0.8) 100%);
+        }
+
+        .project-content {
+            transform: translateY(60px); /* Pushes description down initially */
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .project-card:hover .project-content {
+            transform: translateY(0); /* Slides content up on hover */
+        }
+
+        .project-details {
+            opacity: 0;
+            max-height: 0;
+            transition: all 0.4s ease;
+        }
+
+        .project-card:hover .project-details {
+            opacity: 1;
+            max-height: 150px;
+            margin-top: 1rem;
+        }
+
+        /* Filter Buttons with tactile click and pop */
+        .filter-btn {
+            background: white; border: 1px solid #d1d5db; color: #4b5563;
+            padding: 10px 24px; border-radius: 999px; font-weight: 700; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Hover state */
+        .filter-btn:hover { border-color: var(--rams-red); color: var(--rams-red); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        /* Press state for tactile feel */
+        .filter-btn:active { transform: scale(0.92); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+        /* Active state with pop animation */
+        .filter-btn.active { 
+            background: var(--rams-red); border-color: var(--rams-red); color: white; 
+            box-shadow: 0 10px 20px -5px rgba(163, 0, 0, 0.4); 
+            animation: buttonPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Item Hide for Filtering */
+        .grid-item { transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); opacity: 1; transform: scale(1) translateY(0); }
+        .grid-item.hide { opacity: 0; transform: scale(0.8) translateY(20px); pointer-events: none; position: absolute; }
+
+    </style>
+</head>
+<body class="bg-white selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <div id="scroll-progress"></div>
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <!-- MOBILE DRAWER -->
+    <div id="mobile-drawer">
+        <div class="flex justify-between items-center mb-12">
+            <img src="Logo RAMS Laboratory.PNG" alt="RAMS Lab Logo" class="h-12 w-auto">
+            <button onclick="toggleMobileMenu()" class="p-2 -mr-2"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <nav class="flex flex-col space-y-4">
+            <a href="index.html" class="text-lg font-bold py-2 block text-[#a30000]">Home</a>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-about', this)">
+                    Capabilities <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-about" class="mobile-dropdown-content">
+                    <a href="Capabilities.html" class="block py-2 text-sm font-bold text-gray-500 hover:text-[#a30000]">Capabilities Overview</a>
+                    <a href="Capabilities.html#core-capabilities" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Core Engineering</a>
+                    <a href="Capabilities.html#advanced-tech" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Advanced Tech</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-research', this)">
+                    Research Ecosystem <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-research" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Research Clusters</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Publication Repository</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Ongoing Projects</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-events', this)">
+                    Events <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-events" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Upcoming Symposia</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">MASTIC 2026</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Past Seminars</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Workshops</a>
+                </div>
+            </div>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000] text-gray-800">Contact</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-nav border-b border-gray-100 sticky top-0 z-[1000]">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-10 h-24 flex items-center justify-between relative">
+            <div class="flex items-center space-x-4 md:space-x-5 cursor-pointer z-50" onclick="window.location.href='index.html'">
+                <!-- Shield Logo -->
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Laboratory Logo" class="h-12 md:h-14 w-auto object-contain">
+                
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-800 uppercase tracking-tight">Laboratory of Reliability, Availability, Management & Safety</span>
+                    <span class="text-[8px] text-gray-500 uppercase font-medium">Department of Marine Engineering, ITS</span>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-6 h-full uppercase">
+                <div class="nav-item">
+                    <button onclick="window.location.href='index.html'" class="nav-link active">HOME</button>
+                </div>
+
+                <div class="nav-item has-mega h-full">
+                    <button class="nav-link" onclick="window.location.href='Capabilities.html'">CAPABILITIES <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="mega-menu-container">
+                        <div class="flex w-full">
+                            <div class="w-[35%] relative overflow-hidden group">
+                                <img src="./Asset/AIS Manuvering.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Lab" onerror="this.src='https://images.unsplash.com/photo-1581093458791-9f302247b595?q=80&w=2070&auto=format&fit=crop'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-6 left-6 text-white">
+                                    <span class="text-[9px] font-black uppercase tracking-widest bg-[#a30000] px-2 py-1 mb-2 inline-block">Featured</span>
+                                    <p class="font-bold text-sm">AISITS Manuvering <br>Simulator</p>
+                                </div>
+                            </div>
+                            <div class="w-[65%] p-10 bg-[#f8f9fa] flex flex-col justify-between">
+                                <div class="mb-8">
+                                    <h3 class="serif-logo text-2xl font-bold text-[#161616] mb-4 leading-tight max-w-lg">Team science led by top researchers using one-of-a-kind facilities.</h3>
+                                    <a href="Capabilities.html" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group transition-colors">
+                                        <span class="w-1.5 h-1.5 bg-[#a30000] mr-2 transition-transform group-hover:scale-150"></span>
+                                        Capabilities Overview
+                                    </a>
+                                </div>
+                                <div class="h-px bg-gray-200 w-full mb-8"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <span class="mega-header">Innovation</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./EWS Pipeline.html" class="mega-link">EWS pipeline</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Manuvering AISITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Smart Buoy </a></li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="mega-header">Research</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./Capabilities.html" class="mega-link">AISITS </a></li>
+                                            <li><a href="./PUI KEKAL.html" class="mega-link">PUI KEKAL ITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Inpex Dashboard</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="nav-link">RESEARCH <br>ECOSYSTEM <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Team.html" class="dropdown-link">Meet the Team</a>
+                        <a href="./Research.html" class="dropdown-link">Publications</a>
+                        <a href="./services.html" class="dropdown-link">services</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <button class="nav-link">EVENTS <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Events.html" class="dropdown-link">Media</a>
+                        <a href="https://elib.its.ac.id/conf/mastic/index.html" class="dropdown-link">MASTIC 2026</a>
+                        <a href="./Events.html" class="dropdown-link">events & insights</a>
+                        <a href="./student.html" class="dropdown-link">student work</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <a href="./Contact.html" class="nav-link">CONTACT</a>
+                </div>
+                <div class="h-8 w-px bg-gray-200 ml-2"></div>
+                <button onclick="window.location.href='#'" class="btn-hover bg-[#a30000] text-white px-5 py-3 text-[9px] font-black tracking-widest rounded-sm">Visit Lab</button>
+            </nav>
+            <button class="lg:hidden p-2" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO SECTION -->
+        <section class="relative py-24 md:py-32 bg-[#161616] text-white overflow-hidden">
+            <div class="absolute inset-0 opacity-30">
+                <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=2000" alt="Students collaborating" class="w-full h-full object-cover animate-pan">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#161616] via-[#161616]/80 to-transparent"></div>
+            </div>
+            
+            <div class="max-w-[1440px] w-full mx-auto px-6 lg:px-12 relative z-20">
+                <div class="max-w-3xl reveal">
+                    <span class="inline-block text-[11px] font-black uppercase tracking-[0.2em] text-[#a30000] mb-4 bg-white/10 px-5 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-lg">The Next Generation</span>
+                    <h1 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter mb-8 serif-logo">
+                        Student <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Life.</span>
+                    </h1>
+                    <p class="text-lg text-gray-300 max-w-2xl mb-10 leading-relaxed">
+                        Discover the vibrant community at RAMS Laboratory. From rigorous undergraduate capstone projects to collaborative outbound retreats and e-sports tournaments, our students excel both inside and outside the lab.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STUDENT IMPACT BY THE NUMBERS (PERCENTAGE COUNTING) -->
+        <section class="py-20 bg-[#161616] text-white relative overflow-hidden border-b border-white/10">
+            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
+                <div class="text-center mb-12 reveal zoom-in">
+                    <span class="section-header-small tracking-[0.3em] opacity-80">Our Track Record</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-10 divide-x divide-white/10">
+                    <div class="text-center px-4 reveal zoom-in">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">school</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="95">0</span><span class="text-[#a30000] text-4xl ml-1">%</span>
+                        </div>
+                        <p class="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Employed <br>Within 6 Months</p>
+                    </div>
+                    <div class="text-center px-4 reveal zoom-in" style="transition-delay: 100ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">science</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="120">0</span><span class="text-[#a30000] text-4xl ml-1">+</span>
+                        </div>
+                        <p class="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Student Co-Authored <br>Publications</p>
+                    </div>
+                    <div class="text-center px-4 reveal zoom-in" style="transition-delay: 200ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">workspace_premium</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="50">0</span><span class="text-[#a30000] text-4xl ml-1">+</span>
+                        </div>
+                        <p class="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Capstone <br>Projects Delivered</p>
+                    </div>
+                    <div class="text-center px-4 reveal zoom-in" style="transition-delay: 300ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4">public</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="100">0</span><span class="text-[#a30000] text-4xl ml-1">%</span>
+                        </div>
+                        <p class="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Hands-on Industry <br>Experience</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURED SPOTLIGHT WITH PAN EFFECT -->
+        <section class="py-24 bg-white border-b border-gray-200 relative overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden reveal flex flex-col lg:flex-row relative group cursor-pointer transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(163,0,0,0.2)] hover:border-[#a30000]/30 animate-float">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-red-50 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+                    
+                    <div class="lg:w-1/2 relative min-h-[350px] lg:min-h-full overflow-hidden">
+                        <!-- Adding animate-pan to the spotlight image -->
+                        <img src="https://images.unsplash.com/photo-1541888051515-58564bc7a87e?auto=format&fit=crop&q=80&w=1200" class="absolute inset-0 w-full h-full object-cover animate-pan group-hover:scale-110 transition-transform duration-1000" alt="Autonomous Boat">
+                        <div class="absolute top-6 left-6 bg-[#161616] text-white px-4 py-2 font-black text-xs uppercase tracking-widest shadow-lg z-10">Spotlight Project</div>
+                    </div>
+                    <div class="lg:w-1/2 p-10 md:p-16 flex flex-col justify-center bg-white/80 backdrop-blur-sm z-10">
+                        <div class="flex items-center gap-4 text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">
+                            <span class="text-[#a30000] flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">engineering</span> Undergraduate Capstone</span>
+                        </div>
+                        <h3 class="text-3xl md:text-4xl font-black tracking-tighter text-[#161616] mb-6 leading-tight group-hover:text-[#a30000] transition-colors">Autonomous Surface Vessel Navigation Prototype</h3>
+                        <p class="text-gray-600 mb-8 leading-relaxed">A team of four senior undergraduates successfully designed and tested a collision-avoidance algorithm on a scale-model ship. Integrating ROS, Python, and Arduino, this project represents a leap forward in our lab's autonomous systems research.</p>
+                        
+                        <div class="flex gap-2 flex-wrap mb-8">
+                            <span class="border border-gray-300 text-gray-600 px-3 py-1 text-[10px] rounded-full font-bold uppercase transition-colors group-hover:border-[#a30000] group-hover:text-[#a30000]">Python</span>
+                            <span class="border border-gray-300 text-gray-600 px-3 py-1 text-[10px] rounded-full font-bold uppercase transition-colors group-hover:border-[#a30000] group-hover:text-[#a30000]">ROS</span>
+                            <span class="border border-gray-300 text-gray-600 px-3 py-1 text-[10px] rounded-full font-bold uppercase transition-colors group-hover:border-[#a30000] group-hover:text-[#a30000]">Arduino</span>
+                        </div>
+
+                        <div>
+                            <span class="inline-flex items-center text-[11px] font-black uppercase tracking-widest text-[#161616] group-hover:text-[#a30000] transition-colors">
+                                View Full Case Study <span class="material-symbols-outlined ml-2 text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN SHOWCASE GRID -->
+        <section class="py-24 bg-[#f9fafb] min-h-[800px]">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 reveal">
+                    <div>
+                        <span class="section-header-small">Activity Gallery</span>
+                        <h3 class="text-4xl font-black tracking-tighter text-[#161616]">Life at RAMS Lab.</h3>
+                    </div>
+                    
+                    <!-- Interactive Filter Bar (Now with pop effects) -->
+                    <div class="flex flex-wrap gap-2 md:gap-3">
+                        <button class="filter-btn active" onclick="filterGallery('all')">All Activities</button>
+                        <button class="filter-btn" onclick="filterGallery('project')">Academic Projects</button>
+                        <button class="filter-btn" onclick="filterGallery('fun')">Fun & Outbound</button>
+                        <button class="filter-btn" onclick="filterGallery('social')">Social & Community</button>
+                    </div>
+                </div>
+
+                <!-- Sleek Interactive Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="gallery-grid">
+                    
+                    <!-- Item 1: Fun / Camping -->
+                    <div class="grid-item reveal" data-category="fun">
+                        <div class="project-card group">
+                            <img src="https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&q=80&w=800" alt="Camping" class="project-image">
+                            <div class="absolute top-6 right-6 z-10">
+                                <span class="bg-white/90 text-[#161616] px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm backdrop-blur-md shadow-sm">Bonding</span>
+                            </div>
+                            
+                            <div class="project-overlay">
+                                <div class="project-content w-full">
+                                    <h3 class="text-white text-2xl font-bold serif-logo leading-tight mb-2">Annual Outbound Retreat</h3>
+                                    <p class="text-gray-300 text-sm font-medium">Mount Bromo, East Java</p>
+                                    
+                                    <div class="project-details">
+                                        <p class="text-gray-400 text-sm leading-relaxed mb-4">Taking a break from risk assessments to build leadership and teamwork skills. A 3-day adventure challenging our researchers outside the lab.</p>
+                                        <div class="h-px w-full bg-white/20 mb-3"></div>
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-white hover:text-[#a30000] transition-colors">
+                                            View Event Gallery <span class="material-symbols-outlined ml-1 text-[14px]">chevron_right</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 2: Social / Community -->
+                    <div class="grid-item reveal" style="transition-delay: 100ms;" data-category="social">
+                        <div class="project-card group">
+                            <img src="https://images.unsplash.com/photo-1618477461853-cf6ed80fbfc5?auto=format&fit=crop&q=80&w=800" alt="Beach Cleanup" class="project-image">
+                            <div class="absolute top-6 right-6 z-10">
+                                <span class="bg-[#a30000] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm shadow-sm">Community</span>
+                            </div>
+                            
+                            <div class="project-overlay">
+                                <div class="project-content w-full">
+                                    <h3 class="text-white text-2xl font-bold serif-logo leading-tight mb-2">Coastal Cleanup Initiative</h3>
+                                    <p class="text-gray-300 text-sm font-medium">Kenjeran Beach, Surabaya</p>
+                                    
+                                    <div class="project-details">
+                                        <p class="text-gray-400 text-sm leading-relaxed mb-4">Our students partnered with local fishermen to remove over 500kg of plastic waste, applying our safety principles to environmental protection.</p>
+                                        <div class="h-px w-full bg-white/20 mb-3"></div>
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-white hover:text-[#a30000] transition-colors">
+                                            Read Impact Report <span class="material-symbols-outlined ml-1 text-[14px]">chevron_right</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 3: Graduate Project -->
+                    <div class="grid-item reveal" style="transition-delay: 200ms;" data-category="project">
+                        <div class="project-card group">
+                            <img src="https://images.unsplash.com/photo-1542382103-625d2b7d5262?auto=format&fit=crop&q=80&w=800" alt="LNG Terminal" class="project-image">
+                            <div class="absolute top-6 right-6 z-10">
+                                <span class="bg-[#161616] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm border border-white/20 shadow-sm">Masters Thesis</span>
+                            </div>
+                            
+                            <div class="project-overlay">
+                                <div class="project-content w-full">
+                                    <h3 class="text-white text-2xl font-bold serif-logo leading-tight mb-2">VR LNG Safety Simulation</h3>
+                                    <p class="text-gray-300 text-sm font-medium">Graduate Research Program</p>
+                                    
+                                    <div class="project-details">
+                                        <p class="text-gray-400 text-sm leading-relaxed mb-4">Development of a fully immersive VR environment to train terminal operators on emergency shutdown procedures.</p>
+                                        <div class="flex gap-2 flex-wrap">
+                                            <span class="bg-white/10 text-white px-2 py-1 text-[9px] rounded-sm font-bold uppercase tracking-wider">Unity 3D</span>
+                                            <span class="bg-white/10 text-white px-2 py-1 text-[9px] rounded-sm font-bold uppercase tracking-wider">C#</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 4: Workshop -->
+                    <div class="grid-item reveal" data-category="project">
+                        <div class="project-card group">
+                            <img src="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&q=80&w=800" alt="Workshop" class="project-image">
+                            <div class="absolute top-6 right-6 z-10">
+                                <span class="bg-white/90 text-[#161616] px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm backdrop-blur-md shadow-sm">Workshop</span>
+                            </div>
+                            
+                            <div class="project-overlay">
+                                <div class="project-content w-full">
+                                    <h3 class="text-white text-2xl font-bold serif-logo leading-tight mb-2">Risk Modeling Training</h3>
+                                    <p class="text-gray-300 text-sm font-medium">Student Capacity Building</p>
+                                    
+                                    <div class="project-details">
+                                        <p class="text-gray-400 text-sm leading-relaxed mb-4">A weekend intensive where senior researchers taught undergrads how to utilize industry-standard fault tree analysis software.</p>
+                                        <div class="h-px w-full bg-white/20 mb-3"></div>
+                                        <span class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-white hover:text-[#a30000] transition-colors">
+                                            View Syllabus <span class="material-symbols-outlined ml-1 text-[14px]">chevron_right</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 5: Games / Fun -->
+                    <div class="grid-item reveal" style="transition-delay: 100ms;" data-category="fun">
+                        <div class="project-card group">
+                            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800" alt="Gaming" class="project-image">
+                            <div class="absolute top-6 right-6 z-10">
+                                <span class="bg-[#a30000] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm shadow-sm">E-Sports</span>
+                            </div>
+                            
+                            <div class="project-overlay">
+                                <div class="project-content w-full">
+                                    <h3 class="text-white text-2xl font-bold serif-logo leading-tight mb-2">RAMS Midnight LAN Party</h3>
+                                    <p class="text-gray-300 text-sm font-medium">End of Semester Celebration</p>
+                                    
+                                    <div class="project-details">
+                                        <p class="text-gray-400 text-sm leading-relaxed mb-4">Because researchers need to blow off steam. An epic overnight tournament of FIFA, Valorant, and lots of pizza.</p>
+                                        <div class="h-px w-full bg-white/20 mb-3"></div>
+                                        <p class="text-xs font-bold text-white uppercase tracking-widest">Winners: Simulation Team A</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#161616] text-white py-24 border-t border-white/5 mt-12">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="grid md:grid-cols-4 gap-16 mb-20">
+                <div class="col-span-2">
+                    <h2 class="serif-logo text-5xl font-black text-[#a30000] mb-8">RAMS</h2>
+                    <p class="text-gray-500 max-w-sm leading-relaxed mb-6">Laboratory of Reliability & Safety. <br>Department of Marine Engineering, <br>Institut Teknologi Sepuluh Nopember (ITS) Surabaya.</p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#a30000] hover:text-white transition-colors"><span class="material-symbols-outlined text-[18px]">public</span></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#a30000] hover:text-white transition-colors"><span class="material-symbols-outlined text-[18px]">share</span></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#a30000] hover:text-white transition-colors"><span class="material-symbols-outlined text-[18px]">mail</span></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Navigation</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li><a href="index.html" class="hover:text-white transition-colors">Home</a></li>
+                        <li><a href="Capabilities.html" class="hover:text-white transition-colors">Capabilities</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Research Ecosystem</a></li>
+                        <li><a href="Events.html" class="hover:text-white transition-colors">Events</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Inquiries</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-gray-600">location_on</span> Kampus ITS Sukolilo, Surabaya 60111</li>
+                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-gray-600">email</span> rams.lab@its.ac.id</li>
+                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-gray-600">call</span> +62 (31) 599 4251</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="h-px bg-white/10 mb-12"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-700 uppercase font-black tracking-[0.5em] gap-4">
+                <p>&copy; 2026 RAMS Laboratory ITS Surabaya.</p>
+                <p>Safety First. Engineering Excellence.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // JS Filter Gallery logic with smooth transitions
+        function filterGallery(category) {
+            // Update Active Button visually via CSS classes
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Re-trigger animation by re-flowing the element
+            event.target.classList.remove('active');
+            void event.target.offsetWidth;
+            event.target.classList.add('active');
+
+            // Filter Items
+            const items = document.querySelectorAll('.grid-item');
+            items.forEach(item => {
+                if (category === 'all' || item.getAttribute('data-category') === category) {
+                    item.classList.remove('hide');
+                } else {
+                    item.classList.add('hide');
+                }
+            });
+        }
+
+        // Scroll Reveal Animation Script
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                let windowHeight = window.innerHeight;
+                let elementTop = reveals[i].getBoundingClientRect().top;
+                let elementVisible = 50;
+                if (elementTop < windowHeight - elementVisible) { 
+                    reveals[i].classList.add("active"); 
+                }
+            }
+        }
+
+        // Dynamic Number Counter Animation
+        const animateCounters = () => {
+            const counters = document.querySelectorAll('.counter');
+            const speed = 100; // Lower is slower
+            
+            counters.forEach(counter => {
+                const updateCount = () => {
+                    const target = +counter.getAttribute('data-target');
+                    const count = +counter.innerText;
+                    const inc = target / speed;
+
+                    if (count < target) {
+                        counter.innerText = Math.ceil(count + inc);
+                        setTimeout(updateCount, 25);
+                    } else {
+                        counter.innerText = target;
+                    }
+                };
+                updateCount();
+            });
+        };
+
+        // Trigger counters when scrolled into view using Intersection Observer
+        document.addEventListener('DOMContentLoaded', () => {
+            const counterSection = document.querySelector('.counter')?.closest('section');
+            const observerOptions = { root: null, threshold: 0.5 };
+            
+            if (typeof IntersectionObserver !== 'undefined' && counterSection) {
+                const counterObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            animateCounters();
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, observerOptions);
+                counterObserver.observe(counterSection);
+            } else {
+                animateCounters();
+            }
+            
+            reveal(); // Trigger initial reveal
+        });
+
+        window.addEventListener("scroll", reveal);
+
+        // Scroll Progress Bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            const progress = document.getElementById("scroll-progress");
+            if (progress) progress.style.width = scrolled + "%";
+            reveal();
+        };
+
+        // Mobile Menu Toggles
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const isOpening = !drawer.classList.contains('open');
+            if (isOpening) {
+                overlay.classList.add('active');
+                drawer.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleMobileDropdown(id, btn) {
+            const content = document.getElementById(id);
+            btn.classList.toggle('text-[#a30000]');
+            content.classList.toggle('active');
+            const icon = btn.querySelector('.arrow-icon');
+            if(content.classList.contains('active')){
+                icon.style.transform = "rotate(180deg)";
+            } else {
+                icon.style.transform = "rotate(0deg)";
+            }
+        }
+    </script>
+</body>
+</html>

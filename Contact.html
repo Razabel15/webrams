@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | RAMS Laboratory - ITS Surabaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --rams-red: #a30000;
+            --rams-dark: #161616;
+        }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .serif-logo { font-family: 'Playfair Display', serif; }
+        
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--rams-red); z-index: 2000;
+            width: 0%; transition: width 0.1s ease;
+        }
+
+        /* --- ANIMATIONS & TRANSITIONS --- */
+        
+        /* Base Reveal State */
+        .reveal { 
+            opacity: 0; 
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform, opacity;
+        }
+
+        /* 1. Fade Up (Default) */
+        .reveal:not(.slide-left):not(.slide-right) { transform: translateY(50px); }
+        .reveal.active:not(.slide-left):not(.slide-right) { transform: translateY(0); opacity: 1; }
+
+        /* 2. Slide In From Left */
+        .reveal.slide-left { transform: translateX(-100px); }
+        .reveal.slide-left.active { transform: translateX(0); opacity: 1; }
+
+        /* 3. Slide In From Right */
+        .reveal.slide-right { transform: translateX(100px); }
+        .reveal.slide-right.active { transform: translateX(0); opacity: 1; }
+
+        /* 4. Slow Pan Effect for Hero */
+        @keyframes slow-pan {
+            0% { transform: scale(1.1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(-1%, -2%); }
+            100% { transform: scale(1.1) translate(0, 0); }
+        }
+        .animate-pan { animation: slow-pan 25s ease-in-out infinite alternate; }
+
+        /* Pulse Animation */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(163, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0); }
+        }
+        .hover-pulse:hover { animation: pulse-red 1.5s infinite; }
+
+        /* Input specific transition */
+        .input-focus-effect {
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .input-focus-effect:focus {
+            border-color: var(--rams-red);
+            box-shadow: 0 4px 15px rgba(163, 0, 0, 0.08);
+        }
+
+        /* Map styling */
+        .map-container iframe {
+            filter: grayscale(100%) contrast(1.1) opacity(0.8);
+            transition: all 0.5s ease;
+        }
+        .map-container:hover iframe {
+            filter: grayscale(0%) contrast(1) opacity(1);
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-item { display: flex; align-items: center; height: 100%; }
+        .nav-link {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
+            cursor: pointer; color: #1f2937; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 4px; padding: 0 4px;
+            text-align: left; line-height: 1.2; height: 100%;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--rams-red); }
+
+        /* Mega Menu */
+        .mega-menu-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #f8f9fa; border-top: 1px solid #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-item.has-mega:hover .mega-menu-container { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0; background: white;
+            min-width: 220px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6; padding: 1rem 0; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 1rem 1rem; z-index: 50;
+        }
+        .nav-item.relative:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-link { display: flex; align-items: center; gap: 8px; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; }
+        .dropdown-link:hover { background: #fafafa; color: var(--rams-red); padding-left: 1.75rem; }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); }
+
+        /* --- MOBILE DRAWER --- */
+        #mobile-drawer {
+            position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px;
+            height: 100vh; background: white; z-index: 1600;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+        #mobile-drawer.open { right: 0; }
+        #mobile-menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1500; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-dropdown-content {
+            max-height: 0; overflow: hidden; padding-left: 1rem; border-left: 2px solid #f3f4f6;
+            transition: max-height 0.4s ease, margin 0.3s ease; opacity: 0;
+        }
+        .mobile-dropdown-content.active { max-height: 500px; margin: 0.5rem 0 1rem; opacity: 1; }
+
+        /* --- TYPOGRAPHY UTILS --- */
+        .mega-link { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; padding: 4px 0; transition: color 0.2s; }
+        .mega-link:hover { color: var(--rams-red); }
+        .mega-header { font-size: 0.7rem; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; display: block; }
+        
+        .section-header-small {
+            font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rams-red); margin-bottom: 1rem; display: block;
+        }
+        .tech-card {
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+        .tech-card:hover {
+            transform: translateY(-10px);
+            border-color: #e5e7eb;
+            box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-white selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <div id="scroll-progress"></div>
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <!-- MOBILE DRAWER -->
+    <div id="mobile-drawer">
+        <div class="flex justify-between items-center mb-12">
+            <img src="Logo RAMS Laboratory.PNG" alt="RAMS Lab Logo" class="h-12 w-auto">
+            <button onclick="toggleMobileMenu()" class="p-2 -mr-2"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <nav class="flex flex-col space-y-4">
+            <a href="index.html" class="text-lg font-bold py-2 block text-[#a30000]">Home</a>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-about', this)">
+                    Capabilities <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-about" class="mobile-dropdown-content">
+                    <a href="Capabilities.html" class="block py-2 text-sm font-bold text-gray-500 hover:text-[#a30000]">Capabilities Overview</a>
+                    <a href="Capabilities.html#core-capabilities" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Core Engineering</a>
+                    <a href="Capabilities.html#advanced-tech" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Advanced Tech</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-research', this)">
+                    Research Ecosystem <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-research" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Research Clusters</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Publication Repository</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Ongoing Projects</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-events', this)">
+                    Events <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-events" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Upcoming Symposia</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">MASTIC 2026</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Past Seminars</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Workshops</a>
+                </div>
+            </div>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000] text-gray-800">Contact</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-nav border-b border-gray-100 sticky top-0 z-[1000]">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-10 h-24 flex items-center justify-between relative">
+            <div class="flex items-center space-x-4 md:space-x-5 cursor-pointer z-50" onclick="window.location.href='index.html'">
+                <!-- Shield Logo -->
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Laboratory Logo" class="h-12 md:h-14 w-auto object-contain">
+                
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-800 uppercase tracking-tight">Laboratory of Reliability, Availability, Management & Safety</span>
+                    <span class="text-[8px] text-gray-500 uppercase font-medium">Department of Marine Engineering, ITS</span>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-6 h-full uppercase">
+                <div class="nav-item">
+                    <button onclick="window.location.href='index.html'" class="nav-link active">HOME</button>
+                </div>
+
+                <div class="nav-item has-mega h-full">
+                    <button class="nav-link" onclick="window.location.href='Capabilities.html'">CAPABILITIES <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="mega-menu-container">
+                        <div class="flex w-full">
+                            <div class="w-[35%] relative overflow-hidden group">
+                                <img src="./Asset/AIS Manuvering.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Lab" onerror="this.src='https://images.unsplash.com/photo-1581093458791-9f302247b595?q=80&w=2070&auto=format&fit=crop'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-6 left-6 text-white">
+                                    <span class="text-[9px] font-black uppercase tracking-widest bg-[#a30000] px-2 py-1 mb-2 inline-block">Featured</span>
+                                    <p class="font-bold text-sm">AISITS Manuvering <br>Simulator</p>
+                                </div>
+                            </div>
+                            <div class="w-[65%] p-10 bg-[#f8f9fa] flex flex-col justify-between">
+                                <div class="mb-8">
+                                    <h3 class="serif-logo text-2xl font-bold text-[#161616] mb-4 leading-tight max-w-lg">Team science led by top researchers using one-of-a-kind facilities.</h3>
+                                    <a href="Capabilities.html" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group transition-colors">
+                                        <span class="w-1.5 h-1.5 bg-[#a30000] mr-2 transition-transform group-hover:scale-150"></span>
+                                        Capabilities Overview
+                                    </a>
+                                </div>
+                                <div class="h-px bg-gray-200 w-full mb-8"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <span class="mega-header">Innovation</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./EWS Pipeline.html" class="mega-link">EWS pipeline</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Manuvering AISITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Smart Buoy </a></li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="mega-header">Research</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./Capabilities.html" class="mega-link">AISITS </a></li>
+                                            <li><a href="./PUI KEKAL.html" class="mega-link">PUI KEKAL ITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Inpex Dashboard</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="nav-link">RESEARCH <br>ECOSYSTEM <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Team.html" class="dropdown-link">Meet the Team</a>
+                        <a href="./Research.html" class="dropdown-link">Publications</a>
+                        <a href="./services.html" class="dropdown-link">services</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <button class="nav-link">EVENTS <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Events.html" class="dropdown-link">Media</a>
+                        <a href="https://elib.its.ac.id/conf/mastic/index.html" class="dropdown-link">MASTIC 2026</a>
+                        <a href="./Events.html" class="dropdown-link">events & insights</a>
+                        <a href="./student.html" class="dropdown-link">student work</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <a href="./Contact.html" class="nav-link">CONTACT</a>
+                </div>
+                <div class="h-8 w-px bg-gray-200 ml-2"></div>
+                <button onclick="window.location.href='#'" class="btn-hover bg-[#a30000] text-white px-5 py-3 text-[9px] font-black tracking-widest rounded-sm">Visit Lab</button>
+            </nav>
+            <button class="lg:hidden p-2" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+    </header>
+
+
+    <main>
+        <!-- 1. PAGE HEADER (HERO SECTION) -->
+        <section class="relative py-24 md:py-32 bg-[#161616] text-white overflow-hidden">
+            <!-- Background Image with Slow Pan Animation -->
+            <div class="absolute inset-0 opacity-20">
+                <img src="https://images.unsplash.com/photo-1574169208507-84376144848b?auto=format&fit=crop&q=80&w=2000" alt="Networking and Contact Map" class="w-full h-full object-cover animate-pan">
+            </div>
+            
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
+                <div class="max-w-4xl reveal">
+                    <span class="text-[#a30000] font-black tracking-[0.2em] uppercase mb-4 block">Get In Touch</span>
+                    <h1 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter mb-8">
+                        Contact.
+                    </h1>
+                    <h2 class="text-2xl md:text-3xl text-gray-300 font-light leading-snug mb-8">
+                        Let's engineer safer systems together. Reach out for collaboration, consultancy, or general inquiries.
+                    </h2>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. CONTACT INFORMATION CARDS -->
+        <section class="py-16 bg-gray-50 border-b border-gray-200 -mt-8 relative z-20">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="grid md:grid-cols-3 gap-6">
+                    
+                    <!-- Location Card -->
+                    <div class="reveal tech-card bg-white p-10 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                        <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000]">pin_drop</span>
+                        </div>
+                        <h4 class="font-black text-xl mb-3 text-gray-900">Visit Us</h4>
+                        <p class="text-sm text-gray-600 leading-relaxed mb-4">
+                            <strong>RAMS Laboratory</strong><br>
+                            Department of Marine Engineering<br>
+                            Institut Teknologi Sepuluh Nopember (ITS)<br>
+                            Kampus ITS Sukolilo, Surabaya 60111<br>
+                            East Java, Indonesia
+                        </p>
+                    </div>
+
+                    <!-- Direct Contact Card -->
+                    <div class="reveal tech-card bg-white p-10 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start" style="transition-delay: 100ms;">
+                        <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000]">mail</span>
+                        </div>
+                        <h4 class="font-black text-xl mb-3 text-gray-900">Direct Contact</h4>
+                        <div class="space-y-4 text-sm text-gray-600 w-full">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-gray-400 text-sm">alternate_email</span>
+                                <a href="mailto:rams@its.ac.id" class="hover:text-[#a30000] font-medium transition-colors">rams@its.ac.id</a>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-gray-400 text-sm">call</span>
+                                <a href="tel:+62315994251" class="hover:text-[#a30000] font-medium transition-colors">+62 (31) 5994251 ext. 1234</a>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-gray-400 text-sm">language</span>
+                                <a href="https://www.its.ac.id/tkelautan" target="_blank" class="hover:text-[#a30000] font-medium transition-colors">www.its.ac.id/tkelautan</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Office Hours Card -->
+                    <div class="reveal tech-card bg-white p-10 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start" style="transition-delay: 200ms;">
+                        <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000]">schedule</span>
+                        </div>
+                        <h4 class="font-black text-xl mb-3 text-gray-900">Operating Hours</h4>
+                        <p class="text-sm text-gray-600 mb-4">Our research lab is open during regular university operating hours.</p>
+                        <ul class="space-y-2 w-full text-sm text-gray-600">
+                            <li class="flex justify-between border-b border-gray-100 pb-2">
+                                <span class="font-medium text-gray-800">Mon - Thu</span>
+                                <span>08:00 - 16:00 WIB</span>
+                            </li>
+                            <li class="flex justify-between border-b border-gray-100 pb-2">
+                                <span class="font-medium text-gray-800">Friday</span>
+                                <span>08:00 - 15:00 WIB</span>
+                            </li>
+                            <li class="flex justify-between pb-2 text-gray-400">
+                                <span>Sat - Sun</span>
+                                <span>Closed</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FORM AND MAP SECTION -->
+        <section class="py-24 bg-white overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="flex flex-col lg:flex-row gap-16">
+                    
+                    <!-- Left: Contact Form -->
+                    <div class="lg:w-1/2 reveal slide-left">
+                        <span class="section-header-small">Send a Message</span>
+                        <h3 class="text-4xl font-black tracking-tighter mb-4 text-[#161616]">How can we help?</h3>
+                        <p class="text-gray-500 mb-10 text-sm leading-relaxed">Fill out the form below and our team will get back to you within 1-2 business days. For urgent matters, please use the direct phone line.</p>
+                        
+                        <form id="contactForm" class="space-y-6">
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-800 uppercase tracking-widest mb-2" for="firstName">First Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="firstName" required class="input-focus-effect w-full bg-gray-50 border border-gray-200 p-4 text-sm outline-none rounded-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-800 uppercase tracking-widest mb-2" for="lastName">Last Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="lastName" required class="input-focus-effect w-full bg-gray-50 border border-gray-200 p-4 text-sm outline-none rounded-sm">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-800 uppercase tracking-widest mb-2" for="email">Email Address <span class="text-red-500">*</span></label>
+                                <input type="email" id="email" required class="input-focus-effect w-full bg-gray-50 border border-gray-200 p-4 text-sm outline-none rounded-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-800 uppercase tracking-widest mb-2" for="subject">Subject / Inquiry Type <span class="text-red-500">*</span></label>
+                                <select id="subject" required class="input-focus-effect w-full bg-gray-50 border border-gray-200 p-4 text-sm outline-none rounded-sm text-gray-700 cursor-pointer appearance-none">
+                                    <option value="" disabled selected>Select an option...</option>
+                                    <option value="research">Research Collaboration</option>
+                                    <option value="consultancy">Industry Consultancy</option>
+                                    <option value="academic">Academic & Thesis Inquiry</option>
+                                    <option value="general">General Question</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-800 uppercase tracking-widest mb-2" for="message">Message <span class="text-red-500">*</span></label>
+                                <textarea id="message" rows="5" required class="input-focus-effect w-full bg-gray-50 border border-gray-200 p-4 text-sm outline-none rounded-sm resize-y"></textarea>
+                            </div>
+
+                            <button type="submit" class="bg-[#a30000] text-white px-8 py-5 font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all w-full md:w-auto flex items-center justify-center gap-3">
+                                <span>Send Message</span>
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+
+                            <!-- Success/Error Message Container -->
+                            <div id="formStatus" class="hidden text-sm font-bold mt-4 p-4 rounded-sm border"></div>
+                        </form>
+                    </div>
+
+                    <!-- Right: Map Embed -->
+                    <div class="lg:w-1/2 reveal slide-right h-[500px] lg:h-auto">
+                        <div class="w-full h-full bg-gray-200 rounded-3xl overflow-hidden map-container relative group shadow-lg">
+                            <!-- Note: Using general ITS Surabaya location embed for dummy data purposes -->
+                            <iframe 
+                                src="https://www.google.com/maps/embed/v1/place?q=sistem%20perkapalan%20its&key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8" 
+                                class="w-full h-full border-0" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                            <div class="absolute bottom-6 right-6 bg-white py-3 px-5 rounded-lg shadow-xl flex items-center gap-3 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                                <span class="material-symbols-outlined text-[#a30000]">map</span>
+                                <span class="text-xs font-bold text-gray-800">Kampus ITS Sukolilo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. FAQ / QUICK HELP -->
+        <section class="py-24 bg-gray-50 border-t border-gray-200">
+            <div class="max-w-[1000px] mx-auto px-6 lg:px-12">
+                <div class="text-center mb-16 reveal">
+                    <span class="section-header-small text-center">Support</span>
+                    <h3 class="text-3xl font-black tracking-tighter">Frequently Asked Questions.</h3>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- FAQ 1 -->
+                    <div class="reveal tech-card bg-white border border-gray-200 p-6 rounded-lg cursor-pointer" onclick="this.querySelector('.faq-content').classList.toggle('hidden'); this.querySelector('.icon').innerText = this.querySelector('.icon').innerText === 'add' ? 'remove' : 'add';">
+                        <div class="flex justify-between items-center">
+                            <h5 class="font-bold text-gray-900 text-sm">How can my company collaborate with RAMS Laboratory?</h5>
+                            <span class="material-symbols-outlined icon text-gray-400">add</span>
+                        </div>
+                        <div class="faq-content hidden mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
+                            We welcome industry partnerships through direct consultancy, joint research grants, and specialized training programs. Please fill out the contact form selecting "Industry Consultancy" and our lead researcher will contact you to schedule a meeting.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 2 -->
+                    <div class="reveal tech-card bg-white border border-gray-200 p-6 rounded-lg cursor-pointer" onclick="this.querySelector('.faq-content').classList.toggle('hidden'); this.querySelector('.icon').innerText = this.querySelector('.icon').innerText === 'add' ? 'remove' : 'add';">
+                        <div class="flex justify-between items-center">
+                            <h5 class="font-bold text-gray-900 text-sm">Are your laboratory facilities open for student testing?</h5>
+                            <span class="material-symbols-outlined icon text-gray-400">add</span>
+                        </div>
+                        <div class="faq-content hidden mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
+                            Yes, active ITS Marine Engineering students working on thesis projects related to reliability and safety can request access. Submit a formal request letter signed by your supervisor to the lab administrator.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 3 -->
+                    <div class="reveal tech-card bg-white border border-gray-200 p-6 rounded-lg cursor-pointer" onclick="this.querySelector('.faq-content').classList.toggle('hidden'); this.querySelector('.icon').innerText = this.querySelector('.icon').innerText === 'add' ? 'remove' : 'add';">
+                        <div class="flex justify-between items-center">
+                            <h5 class="font-bold text-gray-900 text-sm">Where exactly is the lab located within the campus?</h5>
+                            <span class="material-symbols-outlined icon text-gray-400">add</span>
+                        </div>
+                        <div class="faq-content hidden mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
+                            We are located within the Department of Marine Engineering main building complex, 1st floor, East Wing. Ask the department front desk for exact directions upon your arrival.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#161616] text-white py-24 border-t border-white/5">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="grid md:grid-cols-4 gap-16 mb-20">
+                <div class="col-span-2">
+                    <h2 class="serif-logo text-5xl font-black text-[#a30000] mb-8">RAMS</h2>
+                    <p class="text-gray-500 max-w-sm leading-relaxed">Laboratory of Reliability & Safety. Department of Marine Engineering, ITS Surabaya.</p>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Navigation</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">About Lab</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">MASTIC 2026</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Publications</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Inquiries</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li>rams@its.ac.id</li>
+                        <li>Surabaya, Indonesia</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="h-px bg-white/10 mb-12"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-700 uppercase font-black tracking-[0.5em]">
+                <p>&copy; 2026 RAMS Laboratory ITS Surabaya. Safety First.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll Reveal Logic
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                let windowHeight = window.innerHeight;
+                let elementTop = reveals[i].getBoundingClientRect().top;
+                let elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) { reveals[i].classList.add("active"); }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        reveal(); // Trigger once on load
+
+        // Mobile Menu Logic
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const isOpening = !drawer.classList.contains('open');
+            if (isOpening) {
+                overlay.classList.add('active');
+                drawer.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleMobileDropdown(id, btn) {
+            const content = document.getElementById(id);
+            btn.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        // Scroll Progress Bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            const progress = document.getElementById("scroll-progress");
+            if (progress) progress.style.width = scrolled + "%";
+        };
+
+        // Form Submission Simulation
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent actual form submission
+            
+            const btn = this.querySelector('button[type="submit"]');
+            const statusBox = document.getElementById('formStatus');
+            const originalContent = btn.innerHTML;
+            
+            // Add loading state
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span> <span>Sending...</span>';
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+            statusBox.classList.add('hidden');
+
+            // Simulate API request (1.5s delay)
+            setTimeout(() => {
+                // Restore button
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                
+                // Show success message
+                statusBox.textContent = 'Message sent successfully! Our team will contact you shortly.';
+                statusBox.className = 'text-[#0d9488] bg-teal-50 border-teal-200 text-sm font-bold mt-4 p-4 rounded-sm border block transition-opacity duration-300';
+                
+                // Reset form
+                this.reset();
+
+                // Hide message after 6 seconds
+                setTimeout(() => { 
+                    statusBox.classList.add('hidden'); 
+                }, 6000);
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

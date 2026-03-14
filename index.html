@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | RAMS Laboratory - ITS Surabaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --rams-red: #a30000;
+            --rams-dark: #161616;
+        }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .serif-logo { font-family: 'Playfair Display', serif; }
+        
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--rams-red); z-index: 2000;
+            width: 0%; transition: width 0.1s ease;
+        }
+
+        /* --- ANIMATIONS & TRANSITIONS --- */
+        
+        /* Base Reveal State */
+        .reveal { 
+            opacity: 0; 
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1); 
+            will-change: transform, opacity;
+        }
+
+        /* 1. Fade Up (Default) */
+        .reveal:not(.slide-left):not(.slide-right):not(.zoom-in) { transform: translateY(50px); }
+        .reveal.active:not(.slide-left):not(.slide-right):not(.zoom-in) { transform: translateY(0); opacity: 1; }
+
+        /* 2. Slide In From Left */
+        .reveal.slide-left { transform: translateX(-100px); }
+        .reveal.slide-left.active { transform: translateX(0); opacity: 1; }
+
+        /* 3. Slide In From Right */
+        .reveal.slide-right { transform: translateX(100px); }
+        .reveal.slide-right.active { transform: translateX(0); opacity: 1; }
+
+        /* 4. Zoom In */
+        .reveal.zoom-in { transform: scale(0.9); }
+        .reveal.zoom-in.active { transform: scale(1); opacity: 1; }
+
+        /* 5. Enhanced Slow Pan Effect */
+        @keyframes slow-pan {
+            0% { transform: scale(1.05) translate(0, 0); }
+            50% { transform: scale(1.1) translate(-2%, -2%); }
+            100% { transform: scale(1.05) translate(2%, 1%); }
+        }
+        .animate-pan { 
+            animation: slow-pan 30s ease-in-out infinite alternate; 
+            will-change: transform;
+        }
+
+        /* 6. Smooth Button Hover Effects */
+        .btn-hover {
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .btn-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px -5px rgba(163, 0, 0, 0.4);
+        }
+        .btn-hover.dark:hover {
+            box-shadow: 0 15px 30px -5px rgba(22, 22, 22, 0.4);
+        }
+        .btn-hover:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(163, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(163, 0, 0, 0); }
+        }
+        .hover-pulse:hover { animation: pulse-red 1.5s infinite; }
+
+            /* --- MARQUEE ANIMATION --- */
+        .marquee-wrapper {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .marquee-track {
+            display: flex;
+            width: max-content;
+            align-items: center;
+        }
+
+        .marquee-set {
+            display: flex;
+            align-items: center;
+            gap: 5rem;
+            flex-shrink: 0;
+            min-width: max-content;
+            padding-right: 5rem;
+        }
+
+        @keyframes marquee-left {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        @keyframes marquee-right {
+            from { transform: translateX(-50%); }
+            to { transform: translateX(0); }
+        }
+
+        .animate-marquee {
+            animation: marquee-left 35s linear infinite;
+            will-change: transform;
+        }
+
+        .animate-marquee-reverse {
+            animation: marquee-right 40s linear infinite;
+            will-change: transform;
+        }
+
+        .logo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            min-width: max-content;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .logo-placeholder:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-placeholder img {
+            display: block;
+            width: auto;
+            max-width: none;
+            flex-shrink: 0;
+            object-fit: contain;
+        }
+
+        /* Academic section */
+        .logo-academic img {
+            filter: grayscale(100%);
+            opacity: 0.55;
+        }
+
+        .logo-academic:hover img {
+            filter: grayscale(0%);
+            opacity: 1;
+        }
+
+        /* Industrial section */
+        .logo-industrial img {
+            opacity: 0.95;
+        }
+
+        .logo-industrial:hover img {
+            opacity: 1;
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-item { display: flex; align-items: center; height: 100%; }
+        .nav-link {
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
+            cursor: pointer; color: #1f2937; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 4px; padding: 0 4px;
+            text-align: left; line-height: 1.2; height: 100%;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--rams-red); }
+        .nav-link.active { border-bottom: 2px solid var(--rams-red); padding-bottom: 2rem; padding-top: 2rem; }
+
+        /* Mega Menu */
+        .mega-menu-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #f8f9fa; border-top: 1px solid #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-item.has-mega:hover .mega-menu-container { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0; background: white;
+            min-width: 220px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6; padding: 1rem 0; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 1rem 1rem; z-index: 50;
+        }
+        .nav-item.relative:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-link { display: block; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; }
+        .dropdown-link:hover { background: #fafafa; color: var(--rams-red); padding-left: 1.75rem; }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); }
+
+        /* --- MOBILE DRAWER --- */
+        #mobile-drawer {
+            position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px;
+            height: 100vh; background: white; z-index: 1600;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+        #mobile-drawer.open { right: 0; }
+        #mobile-menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1500; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        #mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-dropdown-content {
+            max-height: 0; overflow: hidden; padding-left: 1rem; border-left: 2px solid #f3f4f6;
+            transition: max-height 0.4s ease, margin 0.3s ease; opacity: 0;
+        }
+        .mobile-dropdown-content.active { max-height: 500px; margin: 0.5rem 0 1rem; opacity: 1; }
+
+        /* --- PAGE SPECIFIC --- */
+        .list-bullet-square {
+            display: inline-block; width: 6px; height: 6px; 
+            border: 1px solid var(--rams-red); margin-right: 12px;
+            transform: translateY(-2px); transition: background 0.2s;
+        }
+        .hover-bullet:hover .list-bullet-square { background: var(--rams-red); }
+        .mega-link { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; padding: 4px 0; transition: color 0.2s; }
+        .mega-link:hover { color: var(--rams-red); }
+        .mega-header { font-size: 0.7rem; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; display: block; }
+        
+        .section-header-small {
+            font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rams-red); margin-bottom: 1rem; display: block;
+        }
+        .tech-card {
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+        .tech-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: #e5e7eb;
+            box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1);
+        }
+
+        /* Image Frame Styles */
+        .img-frame-left { border-radius: 0 3rem 0 3rem; overflow: hidden; box-shadow: 20px 20px 0px rgba(22, 22, 22, 0.05); position: relative;}
+        .img-frame-right { border-radius: 3rem 0 3rem 0; overflow: hidden; box-shadow: -20px 20px 0px rgba(22, 22, 22, 0.05); position: relative;}
+        .img-hover-zoom { transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; height: 100%; object-fit: cover; }
+        .img-frame-left:hover .img-hover-zoom, .img-frame-right:hover .img-hover-zoom { transform: scale(1.08); }
+        
+        /* Stats Overlay */
+        .stat-badge {
+            position: absolute; bottom: -20px; right: -20px;
+            background: white; padding: 1.5rem; border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .news-card {
+            background: white; border-radius: 1rem; overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            border: 1px solid #f3f4f6;
+        }
+        .news-card:hover { 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); 
+            transform: translateY(-8px); 
+        }
+
+        /* Logos */
+                .logo-placeholder{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-shrink:0;
+            transition:transform .3s ease, opacity .3s ease;
+        }
+
+        .logo-placeholder:hover{
+            transform:scale(1.05);
+        }
+
+        .logo-placeholder img{
+            display:block;
+            width:auto;
+            max-width:none;
+            object-fit:contain;
+        }
+        .logo-placeholder:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Progress Bar Animation */
+        .progress-fill {
+            width: 0;
+            transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+    </style>
+</head>
+<body class="bg-white selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <div id="scroll-progress"></div>
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <!-- MOBILE DRAWER -->
+    <div id="mobile-drawer">
+        <div class="flex justify-between items-center mb-12">
+            <img src="Logo RAMS Laboratory.PNG" alt="RAMS Lab Logo" class="h-12 w-auto">
+            <button onclick="toggleMobileMenu()" class="p-2 -mr-2"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <nav class="flex flex-col space-y-4">
+            <a href="index.html" class="text-lg font-bold py-2 block text-[#a30000]">Home</a>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-about', this)">
+                    Capabilities <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-about" class="mobile-dropdown-content">
+                    <a href="Capabilities.html" class="block py-2 text-sm font-bold text-gray-500 hover:text-[#a30000]">Capabilities Overview</a>
+                    <a href="Capabilities.html#core-capabilities" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Core Engineering</a>
+                    <a href="Capabilities.html#advanced-tech" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Advanced Tech</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-research', this)">
+                    Research Ecosystem <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-research" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Research Clusters</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Publication Repository</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Ongoing Projects</a>
+                </div>
+            </div>
+            <div>
+                <button class="mobile-dropdown-btn text-lg font-bold py-2 block text-gray-800 hover:text-[#a30000]" onclick="toggleMobileDropdown('m-events', this)">
+                    Events <span class="material-symbols-outlined arrow-icon align-middle">expand_more</span>
+                </button>
+                <div id="m-events" class="mobile-dropdown-content">
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Upcoming Symposia</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">MASTIC 2026</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Past Seminars</a>
+                    <a href="#" class="block py-2 text-sm text-gray-500 hover:text-[#a30000]">Workshops</a>
+                </div>
+            </div>
+            <a href="#" class="text-lg font-bold py-2 block hover:text-[#a30000] text-gray-800">Contact</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-nav border-b border-gray-100 sticky top-0 z-[1000]">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-10 h-24 flex items-center justify-between relative">
+            <div class="flex items-center space-x-4 md:space-x-5 cursor-pointer z-50" onclick="window.location.href='index.html'">
+                <!-- Shield Logo -->
+                <img src="./Asset/Logo RAMS Laboratory.PNG" alt="RAMS Laboratory Logo" class="h-12 md:h-14 w-auto object-contain">
+                
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-800 uppercase tracking-tight">Laboratory of Reliability, Availability, Management & Safety</span>
+                    <span class="text-[8px] text-gray-500 uppercase font-medium">Department of Marine Engineering, ITS</span>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex items-center space-x-6 h-full uppercase">
+                <div class="nav-item">
+                    <button onclick="window.location.href='index.html'" class="nav-link active">HOME</button>
+                </div>
+
+                <div class="nav-item has-mega h-full">
+                    <button class="nav-link" onclick="window.location.href='Capabilities.html'">CAPABILITIES <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="mega-menu-container">
+                        <div class="flex w-full">
+                            <div class="w-[35%] relative overflow-hidden group">
+                                <img src="./Asset/AIS Manuvering.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Lab" onerror="this.src='https://images.unsplash.com/photo-1581093458791-9f302247b595?q=80&w=2070&auto=format&fit=crop'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-6 left-6 text-white">
+                                    <span class="text-[9px] font-black uppercase tracking-widest bg-[#a30000] px-2 py-1 mb-2 inline-block">Featured</span>
+                                    <p class="font-bold text-sm">AISITS Manuvering <br>Simulator</p>
+                                </div>
+                            </div>
+                            <div class="w-[65%] p-10 bg-[#f8f9fa] flex flex-col justify-between">
+                                <div class="mb-8">
+                                    <h3 class="serif-logo text-2xl font-bold text-[#161616] mb-4 leading-tight max-w-lg">Team science led by top researchers using one-of-a-kind facilities.</h3>
+                                    <a href="Capabilities.html" class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#161616] hover:text-[#a30000] group transition-colors">
+                                        <span class="w-1.5 h-1.5 bg-[#a30000] mr-2 transition-transform group-hover:scale-150"></span>
+                                        Capabilities Overview
+                                    </a>
+                                </div>
+                                <div class="h-px bg-gray-200 w-full mb-8"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <span class="mega-header">Innovation</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./EWS Pipeline.html" class="mega-link">EWS pipeline</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Manuvering AISITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Smart Buoy </a></li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="mega-header">Research</span>
+                                        <ul class="space-y-2">
+                                            <li><a href="./Capabilities.html" class="mega-link">AISITS </a></li>
+                                            <li><a href="./PUI KEKAL.html" class="mega-link">PUI KEKAL ITS</a></li>
+                                            <li><a href="./Capabilities.html" class="mega-link">Inpex Dashboard</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="nav-link">RESEARCH <br>ECOSYSTEM <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Team.html" class="dropdown-link">Meet the Team</a>
+                        <a href="./Research.html" class="dropdown-link">Publications</a>
+                        <a href="./services.html" class="dropdown-link">services</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <button class="nav-link">EVENTS <span class="material-symbols-outlined text-[14px]">expand_more</span></button>
+                    <div class="dropdown-menu">
+                        <a href="./Events.html" class="dropdown-link">Media</a>
+                        <a href="https://elib.its.ac.id/conf/mastic/index.html" class="dropdown-link">MASTIC 2026</a>
+                        <a href="./Events.html" class="dropdown-link">events & insights</a>
+                        <a href="./student.html" class="dropdown-link">student work</a>
+                    </div>
+                </div>
+                <div class="nav-item relative">
+                    <a href="./Contact.html" class="nav-link">CONTACT</a>
+                </div>
+                <div class="h-8 w-px bg-gray-200 ml-2"></div>
+                <button onclick="window.location.href='#'" class="btn-hover bg-[#a30000] text-white px-5 py-3 text-[9px] font-black tracking-widest rounded-sm">Visit Lab</button>
+            </nav>
+            <button class="lg:hidden p-2" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+    </header>
+
+    <main>
+        <!-- 1. HERO SECTION -->
+        <section class="relative min-h-[90vh] flex items-center bg-[#161616] text-white overflow-hidden">
+            <!-- Background Image with Slow Pan Animation -->
+            <div class="absolute inset-0 opacity-40">
+                <img src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&q=80&w=2000" alt="Advanced Maritime Engineering" class="w-full h-full object-cover animate-pan">
+            </div>
+            
+            <div class="absolute inset-0 bg-gradient-to-r from-[#161616] via-[#161616]/80 to-transparent"></div>
+
+            <div class="max-w-[1440px] w-full mx-auto px-6 lg:px-12 relative z-10 py-20">
+                <div class="max-w-3xl reveal">
+                    <div class="inline-flex items-center gap-3 mb-6 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                        <span class="w-2 h-2 rounded-full bg-[#a30000] animate-pulse"></span>
+                        <span class="text-xs font-bold tracking-widest uppercase text-gray-300">ITS Surabaya Center of Excellence</span>
+                    </div>
+                    <h1 class="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter mb-8 serif-logo">
+                        Engineering <br>
+                        <span class="text-[#a30000]">Reliability,</span> <br>
+                        Ensuring Safety.
+                    </h1>
+                    <p class="text-lg md:text-xl text-gray-300 font-light max-w-2xl mb-12 leading-relaxed">
+                        Leading comprehensive research and consultancy in Reliability, Availability, Management, and Safety (RAMS) for maritime, energy, and complex industrial systems in Indonesia.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#about" class="btn-hover bg-[#a30000] text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest text-center">Discover Our Lab</a>
+                        <a href="Capabilities.html" class="btn-hover dark bg-transparent border border-white/30 text-white px-8 py-4 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 group">
+                            Our Capabilities
+                            <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 reveal zoom-in" style="transition-delay: 500ms;">
+                <span class="text-[9px] font-black uppercase tracking-[0.3em]">Scroll</span>
+                <div class="w-[1px] h-12 bg-gradient-to-b from-white to-transparent"></div>
+            </div>
+        </section>
+
+          <!-- 1.5 COLLABORATION MARQUEE -->
+        <section class="pt-12 bg-white border-b border-gray-100 overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-10 text-center reveal zoom-in">
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Trusted By Global Industry & Academia</span>
+            </div>
+
+          <!-- Academic Collaboration (Atas) -->
+<div class="mb-12">
+    <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-4">
+        <h4 class="text-xs font-bold text-[#a30000] uppercase tracking-widest border-l-2 border-[#a30000] pl-3">
+            Academic Collaboration (Konsorsium AISITS)
+        </h4>
+    </div>
+
+    <div class="marquee-wrapper group">
+        <!-- Fading edges -->
+        <div class="absolute top-0 left-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+        <div class="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+
+        <div class="marquee-track animate-marquee group-hover:[animation-play-state:paused]">
+            <!-- Set 1 -->
+            <div class="marquee-set">
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/KOBE.png" alt="KOBE" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/DEU TURKEY.png" alt="DEU TURKEY" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/ITB.png" alt="ITB" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/ITU TURKEY.png" alt="ITU TURKEY" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/NMRI.png" alt="NMRI" class="h-10 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/OSAKA.png" alt="OSAKA" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/TOKYO.png" alt="TOKYO" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/UGM.png" alt="UGM" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/UI.png" alt="UI" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/UNUD.png" alt="UNUD" class="h-20 w-auto">
+                </div>
+            </div>
+
+            <!-- Set 2 -->
+            <div class="marquee-set" aria-hidden="true">
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/KOBE.png" alt="KOBE" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/DEU TURKEY.png" alt="DEU TURKEY" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/ITB.png" alt="ITB" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/ITU TURKEY.png" alt="ITU TURKEY" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/NMRI.png" alt="NMRI" class="h-10 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/OSAKA.png" alt="OSAKA" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/TOKYO.png" alt="TOKYO" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/UGM.png" alt="UGM" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/UI.png" alt="UI" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-dark">
+                    <img src="./Asset/Uni Logo/UNUD.png" alt="UNUD" class="h-20 w-auto">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+           <!-- Industrial Collaboration (Bawah) -->
+<div class="bg-[#a30000] py-10 mt-6">
+    <div class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-6">
+        <h4 class="text-xs font-bold text-white uppercase tracking-widest border-l-2 border-white pl-3">
+            Industrial Collaboration
+        </h4>
+    </div>
+
+    <div class="marquee-wrapper group text-white">
+        <!-- Fading edges -->
+        <div class="absolute top-0 left-0 w-32 h-full bg-gradient-to-r from-[#a30000] to-transparent z-10 pointer-events-none"></div>
+        <div class="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-[#a30000] to-transparent z-10 pointer-events-none"></div>
+
+        <div class="marquee-track animate-marquee-reverse group-hover:[animation-play-state:paused]">
+            <!-- Set 1 -->
+            <div class="marquee-set">
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/adhi karya.png" alt="ADHI KARYA" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/BKI.png" alt="BKI" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/BP logo.png" alt="BP" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/bright pln batam.png" alt="Bright PLN Batam" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Chevron Logo.png" alt="Chevron" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Eni logo.png" alt="Eni" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/GL denton.jpg" alt="GL Denton" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Kris Energy Limited.png" alt="Kris Energy" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Pelindo.png" alt="Pelindo" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Pertamina logo.png" alt="Pertamina" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/petrokimia gresik.png" alt="Petrokimia Gresik" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Petronas logo.png" alt="Petronas" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/PLN logo.png" alt="PLN" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/polytama propindo.png" alt="Polytama Propindo" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/SKK HCML.png" alt="SKK HCML" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/skk migas logo.png" alt="SKK Migas" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/tangguh lng.png" alt="Tangguh LNG" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/vico logo.png" alt="Vico" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/dishub logo.png" alt="Dishub" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/PGN logo.png" alt="PGN" class="h-20 w-auto">
+                </div>
+            </div>
+
+            <!-- Set 2 harus sama persis -->
+            <div class="marquee-set" aria-hidden="true">
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/adhi karya.png" alt="ADHI KARYA" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/BKI.png" alt="BKI" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/BP logo.png" alt="BP" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/bright pln batam.png" alt="Bright PLN Batam" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Chevron Logo.png" alt="Chevron" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Eni logo.png" alt="Eni" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/GL denton.jpg" alt="GL Denton" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Kris Energy Limited.png" alt="Kris Energy" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Pelindo.png" alt="Pelindo" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Pertamina logo.png" alt="Pertamina" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/petrokimia gresik.png" alt="Petrokimia Gresik" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/Petronas logo.png" alt="Petronas" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/PLN logo.png" alt="PLN" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/polytama propindo.png" alt="Polytama Propindo" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/SKK HCML.png" alt="SKK HCML" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/skk migas logo.png" alt="SKK Migas" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/tangguh lng.png" alt="Tangguh LNG" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/vico logo.png" alt="Vico" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/dishub logo.png" alt="Dishub" class="h-20 w-auto">
+                </div>
+                <div class="logo-placeholder logo-light">
+                    <img src="./Asset/clients/PGN logo.png" alt="PGN" class="h-20 w-auto">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </section>
+
+        <!-- 2. INTRODUCTION & VISION -->
+        <section id="about" class="py-24 bg-white overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+                    <!-- Text Side -->
+                    <div class="lg:w-1/2 reveal slide-left">
+                        <span class="section-header-small">About RAMS Lab</span>
+                        <h2 class="text-4xl md:text-5xl font-black tracking-tighter mb-6 text-[#161616]">
+                            Safeguarding the Future of Complex Operations.
+                        </h2>
+                        <p class="text-gray-600 leading-relaxed mb-6 text-lg">
+                            Located within the Department of Marine Engineering at the Institut Teknologi Sepuluh Nopember (ITS), the RAMS Laboratory is a premier research facility dedicated to mitigating risks in high-stakes environments.
+                        </p>
+                        <p class="text-gray-500 leading-relaxed mb-8">
+                            We bridge the gap between academic theory and industrial application, providing robust models, predictive analytics, and safety frameworks that ensure critical infrastructures operate without failure.
+                        </p>
+                        
+                        <div class="grid grid-cols-2 gap-6 mt-8">
+                            <div class="hover-bullet cursor-default">
+                                <h4 class="font-bold mb-2 flex items-center text-[#161616]"><span class="list-bullet-square mt-0.5"></span>Exceptional Human Resources</h4>
+                                <p class="text-sm text-gray-500">Supported by a team where <strong class="text-[#a30000]">90% are PhD holders</strong>, possessing 10-25 years of hands-on experience in public services and engineering.</p>
+                            </div>
+                            <div class="hover-bullet cursor-default">
+                                <h4 class="font-bold mb-2 flex items-center text-[#161616]"><span class="list-bullet-square mt-0.5"></span>Multidisciplinary Expertise</h4>
+                                <p class="text-sm text-gray-500">Integrating Marine Technology, Civil, Chemical, Safety, Instrumentation, Electrical, Geotechnic, and Environmental Engineering.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Side -->
+                    <div class="lg:w-1/2 relative reveal slide-right w-full">
+                        <div class="img-frame-right h-[500px] w-full relative z-10 overflow-hidden">
+                            <!-- Added animate-pan and hover zoom for a captivating dual-effect -->
+                            <img src="./Asset/oil rig.jpg" alt="LNG Ship at Terminal" class="img-hover-zoom animate-pan w-full h-full object-cover">
+                        </div>
+                        <!-- Decorative Stats Overlay -->
+                        <div class="stat-badge hidden md:flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-[#161616] flex items-center justify-center text-white shadow-lg">
+                                <span class="material-symbols-outlined">workspace_premium</span>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-black text-[#a30000] leading-none">15<span class="text-lg">+</span> Years</p>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">Consultancy Experience</p>
+                            </div>
+                        </div>
+                        <!-- Decorative background element -->
+                        <div class="absolute -top-10 -right-10 w-64 h-64 bg-gray-50 rounded-full z-0 animate-pulse" style="animation-duration: 4s;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. BY THE NUMBERS (DYNAMIC COUNTERS) -->
+        <section class="py-20 bg-[#161616] text-white relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-10 divide-x divide-white/10">
+                    <div class="text-center px-4 reveal zoom-in">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 hover-pulse rounded-full">verified</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="15">0</span><span class="text-[#a30000] text-4xl ml-1">+</span>
+                        </div>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Years Excellence</p>
+                    </div>
+                    <div class="text-center px-4 reveal zoom-in" style="transition-delay: 100ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 hover-pulse rounded-full">local_fire_department</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="39">0</span><span class="text-[#a30000] text-4xl ml-1">%</span>
+                        </div>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Oil & Gas Safety Focus</p>
+                    </div>
+                    <div class="text-center px-4 reveal zoom-in" style="transition-delay: 200ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 hover-pulse rounded-full">directions_boat</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="31">0</span><span class="text-[#a30000] text-4xl ml-1">%</span>
+                        </div>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">LNG Distribution Projects</p>
+                    </div>
+                    <div class="text-center px-4 reveal zoom-in" style="transition-delay: 300ms;">
+                        <span class="material-symbols-outlined text-4xl text-[#a30000] mb-4 hover-pulse rounded-full">school</span>
+                        <div class="text-5xl md:text-6xl font-black mb-2 flex justify-center items-end serif-logo">
+                            <span class="counter" data-target="90">0</span><span class="text-[#a30000] text-4xl ml-1">%</span>
+                        </div>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">PhD Experts</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3.5 PERFORMANCE IN 15 YEARS (PROGRESS BARS WITH COUNTERS) -->
+        <section class="py-24 bg-white border-b border-gray-200">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="flex flex-col md:flex-row gap-16 items-center">
+                    <div class="md:w-1/3 reveal slide-left">
+                        <span class="section-header-small">Track Record</span>
+                        <h3 class="text-4xl md:text-5xl font-black tracking-tighter text-[#161616] mb-6">Our Performance in 15 Years.</h3>
+                        <p class="text-gray-500 leading-relaxed mb-6">Over the past decade and a half, RAMS Laboratory has delivered high-impact consultancy and research across critical infrastructure sectors.</p>
+                        <p class="text-sm font-bold text-[#a30000] tracking-widest uppercase">Trusted by Major Industry Players</p>
+                    </div>
+                    
+                    <div class="md:w-2/3 w-full reveal slide-right" id="performance-bars">
+                        <!-- Progress Bars representing Pie Chart Data -->
+                        <div class="space-y-8">
+                            <!-- Data 1 -->
+                            <div class="group">
+                                <div class="flex justify-between items-end mb-2 transition-transform group-hover:-translate-y-1">
+                                    <span class="font-bold text-[#161616] flex items-center gap-2"><span class="material-symbols-outlined text-[#a30000]">oil_barrel</span> Safety Oil and Gas Facilities</span>
+                                    <span class="font-black text-2xl text-[#a30000]"><span class="bar-counter" data-target="39">0</span>%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden shadow-inner">
+                                    <div class="bg-gradient-to-r from-[#7a0000] to-[#a30000] h-full progress-fill rounded-full relative" style="width: 0%" data-target-width="39%">
+                                        <div class="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Data 2 -->
+                            <div class="group">
+                                <div class="flex justify-between items-end mb-2 transition-transform group-hover:-translate-y-1">
+                                    <span class="font-bold text-[#161616] flex items-center gap-2"><span class="material-symbols-outlined text-[#0d9488]">propane</span> LNG Distribution and Terminal</span>
+                                    <span class="font-black text-2xl text-[#0d9488]"><span class="bar-counter" data-target="31">0</span>%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden shadow-inner">
+                                    <div class="bg-gradient-to-r from-[#0f766e] to-[#0d9488] h-full progress-fill rounded-full relative" style="width: 0%" data-target-width="31%">
+                                        <div class="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Data 3 -->
+                            <div class="group">
+                                <div class="flex justify-between items-end mb-2 transition-transform group-hover:-translate-y-1">
+                                    <span class="font-bold text-[#161616] flex items-center gap-2"><span class="material-symbols-outlined text-[#2563eb]">directions_boat</span> Shipping</span>
+                                    <span class="font-black text-2xl text-[#2563eb]"><span class="bar-counter" data-target="15">0</span>%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden shadow-inner">
+                                    <div class="bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] h-full progress-fill rounded-full relative" style="width: 0%" data-target-width="15%">
+                                        <div class="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Data 4 & 5 -->
+                            <div class="grid grid-cols-2 gap-8">
+                                <div class="group">
+                                    <div class="flex justify-between items-end mb-2 transition-transform group-hover:-translate-y-1">
+                                        <span class="font-bold text-[#161616] text-sm">Power Plant</span>
+                                        <span class="font-black text-lg text-[#d97706]"><span class="bar-counter" data-target="9">0</span>%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden shadow-inner">
+                                        <div class="bg-gradient-to-r from-[#b45309] to-[#d97706] h-full progress-fill rounded-full relative" style="width: 0%" data-target-width="9%"></div>
+                                    </div>
+                                </div>
+                                <div class="group">
+                                    <div class="flex justify-between items-end mb-2 transition-transform group-hover:-translate-y-1">
+                                        <span class="font-bold text-[#161616] text-sm">Other Sectors</span>
+                                        <span class="font-black text-lg text-gray-500"><span class="bar-counter" data-target="6">0</span>%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden shadow-inner">
+                                        <div class="bg-gradient-to-r from-gray-500 to-gray-400 h-full progress-fill rounded-full relative" style="width: 0%" data-target-width="6%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. CAPABILITIES TEASER -->
+        <section class="py-24 bg-gray-50 border-b border-gray-200">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-16 reveal">
+                    <div class="max-w-2xl">
+                        <span class="section-header-small">What We Do</span>
+                        <h3 class="text-4xl md:text-5xl font-black tracking-tighter text-[#161616]">Area of Consultancy Services.</h3>
+                    </div>
+                    <div class="hidden md:flex flex-col items-end text-right">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Level Design Capacity</span>
+                        <div class="flex gap-3">
+                            <span class="bg-[#161616] text-white text-[10px] font-black px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">Conceptual Design</span>
+                            <span class="bg-[#161616] text-white text-[10px] font-black px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">Feasibility Study</span>
+                            <span class="bg-[#a30000] text-white text-[10px] font-black px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">PRE-FEED</span>
+                            <span class="bg-[#a30000] text-white text-[10px] font-black px-3 py-1 rounded-sm uppercase tracking-wider shadow-sm">FEED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Service 1 -->
+                    <div class="reveal tech-card bg-white p-10 rounded-2xl cursor-pointer group">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-6 group-hover:bg-[#a30000] transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000] group-hover:text-white transition-colors">troubleshoot</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-4 text-[#161616]">Safety and Risk Assessment</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6">Comprehensive evaluations to identify hazards, mitigate risks, and ensure regulatory compliance across critical assets.</p>
+                    </div>
+
+                    <!-- Service 2 -->
+                    <div class="reveal tech-card bg-white p-10 rounded-2xl cursor-pointer group" style="transition-delay: 150ms;">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-6 group-hover:bg-[#a30000] transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000] group-hover:text-white transition-colors">propane</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-4 text-[#161616]">LNG Terminal & Distribution</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6">Specialized design, safety analysis, and logistical optimization for Liquefied Natural Gas (LNG) infrastructure.</p>
+                    </div>
+
+                    <!-- Service 3 -->
+                    <div class="reveal tech-card bg-white p-10 rounded-2xl cursor-pointer group" style="transition-delay: 300ms;">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-6 group-hover:bg-[#a30000] transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000] group-hover:text-white transition-colors">waves</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-4 text-[#161616]">Onshore & Subsea Pipeline</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6">Reliability and structural integrity assessment for onshore and deep-water subsea pipeline networks.</p>
+                    </div>
+                    
+                    <!-- Service 4 -->
+                    <div class="reveal tech-card bg-white p-10 rounded-2xl cursor-pointer group">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-6 group-hover:bg-[#a30000] transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000] group-hover:text-white transition-colors">engineering</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-4 text-[#161616]">Marine Engineering</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6">Advanced technical consulting for marine vessels, structures, and systems to optimize performance and safety.</p>
+                    </div>
+                    
+                    <!-- Service 5 -->
+                    <div class="reveal tech-card bg-white p-10 rounded-2xl cursor-pointer group" style="transition-delay: 150ms;">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-6 group-hover:bg-[#a30000] transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000] group-hover:text-white transition-colors">analytics</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-4 text-[#161616]">Marine Survey & Market Analysis</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6">Expert field surveys, condition assessments, and deep-dive maritime market intelligence reporting.</p>
+                    </div>
+                    
+                    <!-- Service 6 -->
+                    <div class="reveal tech-card bg-white p-10 rounded-2xl cursor-pointer group" style="transition-delay: 300ms;">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-6 group-hover:bg-[#a30000] transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl text-[#a30000] group-hover:text-white transition-colors">local_shipping</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-4 text-[#161616]">Marine Terminal & Logistic</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6">Strategic planning, risk management, and operational efficiency analysis for ports and marine supply chains.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. LATEST NEWS & RESEARCH HIGHLIGHTS -->
+        <section class="py-24 bg-white">
+            <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+                <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+                    <span class="section-header-small text-center">Insights & Updates</span>
+                    <h3 class="text-4xl font-black tracking-tighter text-[#161616]">Latest from the Lab.</h3>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- News Item 1 -->
+                    <article class="news-card reveal group cursor-pointer">
+                        <div class="h-56 overflow-hidden relative">
+                            <img src="./Asset/Autonomuos vessel.jpg" alt="Shipyard" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" onerror="this.src='https://images.unsplash.com/photo-1542382103-625d2b7d5262?auto=format&fit=crop&q=80&w=800'">
+                            <div class="absolute top-4 left-4 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#a30000] rounded-sm shadow">Project</div>
+                        </div>
+                        <div class="p-8">
+                            <time class="text-xs font-bold text-gray-400 mb-2 block tracking-wider">MAR 12, 2026</time>
+                            <h4 class="text-lg font-bold text-[#161616] mb-3 leading-tight group-hover:text-[#a30000] transition-colors">Autonomous Vessel Navigation Safety Framework Released</h4>
+                            <p class="text-sm text-gray-500 line-clamp-3 mb-6">Our research team has published a comprehensive risk assessment framework for autonomous surface vessels operating in congested waterways.</p>
+                            <span class="inline-flex items-center text-xs font-black text-[#a30000] group-hover:translate-x-2 transition-transform uppercase tracking-widest">Read Article <span class="material-symbols-outlined text-[14px] ml-1">chevron_right</span></span>
+                        </div>
+                    </article>
+
+                    <!-- News Item 2 -->
+                    <article class="news-card reveal group cursor-pointer" style="transition-delay: 150ms;">
+                        <div class="h-56 overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&q=80&w=800" alt="Wind Turbine" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute top-4 left-4 bg-[#a30000] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm shadow">Publication</div>
+                        </div>
+                        <div class="p-8">
+                            <time class="text-xs font-bold text-gray-400 mb-2 block tracking-wider">FEB 28, 2026</time>
+                            <h4 class="text-lg font-bold text-[#161616] mb-3 leading-tight group-hover:text-[#a30000] transition-colors">Predictive Maintenance Model for Offshore Wind Farms</h4>
+                            <p class="text-sm text-gray-500 line-clamp-3 mb-6">A new machine learning approach to predicting turbine failures could reduce maintenance costs by up to 30%, according to a recent study by the RAMS lab.</p>
+                            <span class="inline-flex items-center text-xs font-black text-[#a30000] group-hover:translate-x-2 transition-transform uppercase tracking-widest">Read Article <span class="material-symbols-outlined text-[14px] ml-1">chevron_right</span></span>
+                        </div>
+                    </article>
+
+                    <!-- News Item 3 -->
+                    <article class="news-card reveal group cursor-pointer" style="transition-delay: 300ms;">
+                        <div class="h-56 overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&q=80&w=800" alt="Conference" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute top-4 left-4 bg-[#161616] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm shadow">Event</div>
+                        </div>
+                        <div class="p-8">
+                            <time class="text-xs font-bold text-gray-400 mb-2 block tracking-wider">FEB 15, 2026</time>
+                            <h4 class="text-lg font-bold text-[#161616] mb-3 leading-tight group-hover:text-[#a30000] transition-colors">RAMS Lab to Host MASTIC 2026 International Symposium</h4>
+                            <p class="text-sm text-gray-500 line-clamp-3 mb-6">Join us this November for the International Conference on Marine Safety and Maritime Technology, featuring keynotes from global safety experts.</p>
+                            <span class="inline-flex items-center text-xs font-black text-[#a30000] group-hover:translate-x-2 transition-transform uppercase tracking-widest">View Event <span class="material-symbols-outlined text-[14px] ml-1">chevron_right</span></span>
+                        </div>
+                    </article>
+                </div>
+                
+                <div class="mt-12 text-center">
+                    <button class="btn-hover bg-transparent border-2 border-gray-200 text-[#161616] px-8 py-3 font-black text-[11px] uppercase tracking-widest rounded-full hover:border-[#161616]">View All News</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. GLOBAL CTA -->
+        <section class="py-32 bg-[#a30000] text-white text-center relative overflow-hidden">
+             <!-- Background Texture -->
+             <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+             
+            <div class="max-w-3xl mx-auto px-6 reveal relative z-10">
+                <h3 class="serif-logo text-5xl md:text-6xl font-black mb-6">Partner With Us.</h3>
+                <p class="text-white/80 mb-10 text-lg md:text-xl font-light">Whether you need specific industry consultancy, conceptual design, or specialized training, the RAMS Lab is ready to assist.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button class="btn-hover dark bg-[#161616] text-white px-10 py-5 font-black text-[11px] uppercase tracking-widest rounded-sm">Contact Our Team</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#161616] text-white py-24 border-t border-white/5">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div class="grid md:grid-cols-4 gap-16 mb-20">
+                <div class="col-span-2">
+                    <h2 class="serif-logo text-5xl font-black text-[#a30000] mb-8">RAMS</h2>
+                    <p class="text-gray-500 max-w-sm leading-relaxed mb-6">Laboratory of Reliability & Safety. <br>Department of Marine Engineering, <br>Institut Teknologi Sepuluh Nopember (ITS) Surabaya.</p>
+                    <div class="flex gap-4">
+                        <!-- Social Placeholders -->
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#a30000] hover:text-white transition-colors hover:-translate-y-1"><span class="material-symbols-outlined text-[18px]">public</span></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#a30000] hover:text-white transition-colors hover:-translate-y-1"><span class="material-symbols-outlined text-[18px]">share</span></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-[#a30000] hover:text-white transition-colors hover:-translate-y-1"><span class="material-symbols-outlined text-[18px]">mail</span></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Navigation</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li><a href="index.html" class="hover:text-white transition-colors">Home</a></li>
+                        <li><a href="Capabilities.html" class="hover:text-white transition-colors">Capabilities</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Research Ecosystem</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">MASTIC 2026</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#a30000] mb-8">Inquiries</h3>
+                    <ul class="space-y-4 text-sm font-medium text-gray-400">
+                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-gray-600">location_on</span> Kampus ITS Sukolilo, Surabaya 60111</li>
+                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-gray-600">email</span> rams.lab@its.ac.id</li>
+                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-gray-600">call</span> +62 (31) 599 4251</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="h-px bg-white/10 mb-12"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-700 uppercase font-black tracking-[0.5em] gap-4">
+                <p>&copy; 2026 RAMS Laboratory ITS Surabaya.</p>
+                <p>Safety First. Engineering Excellence.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Progress Bar and Number Sync Logic
+        function animateProgressCounters(container) {
+            const counters = container.querySelectorAll('.bar-counter');
+            counters.forEach(counter => {
+                if (counter.classList.contains('animated')) return; // prevent double animation
+                
+                const target = +counter.getAttribute('data-target');
+                const duration = 2000; // ms, matches the 2s CSS transition on the bar
+                const frameRate = 1000 / 60; // 60fps
+                const totalFrames = duration / frameRate;
+                let frame = 0;
+                
+                const counterInterval = setInterval(() => {
+                    frame++;
+                    const progress = frame / totalFrames;
+                    // easeOutQuart formula for smooth deceleration matching the CSS
+                    const easeProgress = 1 - Math.pow(1 - progress, 4);
+                    const currentCount = Math.round(target * easeProgress);
+                    
+                    counter.innerText = currentCount;
+                    
+                    if (frame >= totalFrames) {
+                        clearInterval(counterInterval);
+                        counter.innerText = target;
+                    }
+                }, frameRate);
+                
+                counter.classList.add('animated');
+            });
+        }
+
+        // 1. Scroll Reveal Animation
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                let windowHeight = window.innerHeight;
+                let elementTop = reveals[i].getBoundingClientRect().top;
+                let elementVisible = 100;
+                
+                if (elementTop < windowHeight - elementVisible) { 
+                    if (!reveals[i].classList.contains("active")) {
+                        reveals[i].classList.add("active"); 
+                        
+                        // Trigger progress bars and numbers inside the revealed element
+                        let progressBars = reveals[i].querySelectorAll('.progress-fill');
+                        if(progressBars.length > 0) {
+                            // Delay slightly to wait for the slide-in animation to start
+                            setTimeout(() => {
+                                progressBars.forEach(bar => {
+                                    const targetWidth = bar.getAttribute('data-target-width');
+                                    if (targetWidth) {
+                                        bar.style.width = targetWidth;
+                                    }
+                                });
+                                animateProgressCounters(reveals[i]);
+                            }, 300);
+                        }
+                    }
+                }
+            }
+        }
+        
+        window.addEventListener("scroll", reveal);
+        reveal(); // Trigger once on load
+
+        // 2. Mobile Menu Toggles
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const isOpening = !drawer.classList.contains('open');
+            if (isOpening) {
+                overlay.classList.add('active');
+                drawer.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleMobileDropdown(id, btn) {
+            const content = document.getElementById(id);
+            btn.classList.toggle('text-[#a30000]');
+            content.classList.toggle('active');
+            const icon = btn.querySelector('.arrow-icon');
+            if(content.classList.contains('active')){
+                icon.style.transform = "rotate(180deg)";
+            } else {
+                icon.style.transform = "rotate(0deg)";
+            }
+        }
+
+        // 3. Scroll Progress Bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            const progress = document.getElementById("scroll-progress");
+            if (progress) progress.style.width = scrolled + "%";
+            
+            reveal(); // Continually check for reveal elements
+        };
+
+        // 4. Dynamic Number Counter Animation (For the top 4 stat blocks)
+        const animateCounters = () => {
+            const counters = document.querySelectorAll('.counter');
+            const speed = 200; 
+
+            counters.forEach(counter => {
+                if(counter.classList.contains('animated')) return;
+
+                const updateCount = () => {
+                    const target = +counter.getAttribute('data-target');
+                    const count = +counter.innerText;
+                    const inc = target / speed;
+
+                    if (count < target) {
+                        counter.innerText = Math.ceil(count + inc);
+                        setTimeout(updateCount, 20);
+                    } else {
+                        counter.innerText = target;
+                        counter.classList.add('animated');
+                    }
+                };
+                updateCount();
+            });
+        };
+
+        // Trigger standard counters when scrolled into view using Intersection Observer
+        const counterSection = document.querySelector('.counter')?.closest('section');
+        const observerOptions = { root: null, threshold: 0.5 };
+        
+        if (typeof IntersectionObserver !== 'undefined' && counterSection) {
+            const counterObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateCounters();
+                        observer.unobserve(entry.target); 
+                    }
+                });
+            }, observerOptions);
+            counterObserver.observe(counterSection);
+        } else {
+            animateCounters();
+        }
+
+    </script>
+</body>
+</html>
